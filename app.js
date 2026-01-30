@@ -691,7 +691,7 @@ function renderActiveList(tasks) {
     const hasNote = Boolean(t.note && t.note.trim());
     const hasAttachments = Boolean(t.attachments && t.attachments.length);
     const noteClass = !hasNote && !hasAttachments ? "note-empty" : "";
-    const noteText = hasNote ? escapeHtml(t.note) : (hasAttachments ? "" : "内 / 備 / 注なし");
+    const noteText = hasNote ? linkifyText(t.note) : (hasAttachments ? "" : "内 / 備 / 注なし");
     return `<tr>
       <td class="col-mini badge-cell ${t.type}"><span class="badge ${t.type}">${t.type === "work" ? "W" : "P"}</span></td>
       <td class="col-mini"><span class="risk-label ${risk.className}">${risk.text}</span></td>
@@ -738,7 +738,7 @@ function renderDoneList(tasks) {
     const hasNote = Boolean(t.note && t.note.trim());
     const hasAttachments = Boolean(t.attachments && t.attachments.length);
     const noteClass = !hasNote && !hasAttachments ? "note-empty" : "";
-    const noteText = hasNote ? escapeHtml(t.note) : (hasAttachments ? "" : "内 / 備 / 注なし");
+    const noteText = hasNote ? linkifyText(t.note) : (hasAttachments ? "" : "内 / 備 / 注なし");
     return `<tr>
       <td class="col-mini"><input type="checkbox" class="done-check" data-id="${t.id}"></td>
       <td class="col-mini badge-cell ${t.type}"><span class="badge ${t.type}">${t.type === "work" ? "W" : "P"}</span></td>
@@ -911,6 +911,39 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/\"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function linkifyText(value) {
+  const text = value || "";
+  if (!text) return "";
+  const urlRegex = /https?:\/\/[^\s<>"']+/gi;
+  let result = "";
+  let lastIndex = 0;
+  let match = null;
+
+  while ((match = urlRegex.exec(text)) !== null) {
+    const rawUrl = match[0];
+    const offset = match.index;
+    let url = rawUrl;
+    let suffix = "";
+    const trailing = url.match(/[)\].,!?;:}]+$/);
+    if (trailing) {
+      suffix = trailing[0];
+      url = url.slice(0, -suffix.length);
+    }
+
+    result += escapeHtml(text.slice(lastIndex, offset));
+    if (!url) {
+      result += escapeHtml(rawUrl);
+    } else {
+      const safeHref = encodeURI(url).replace(/"/g, "%22");
+      result += `<a class="note-link" href="${safeHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>${escapeHtml(suffix)}`;
+    }
+    lastIndex = offset + rawUrl.length;
+  }
+
+  result += escapeHtml(text.slice(lastIndex));
+  return result;
 }
 
 function truncateText(value, maxLength) {

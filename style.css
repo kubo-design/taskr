@@ -686,6 +686,11 @@ textarea{
   text-decoration:underline;
   word-break:break-all;
 }
+.note-link{
+  color:#1f4cff;
+  text-decoration:underline;
+  word-break:break-all;
+}
 .attachment-list .btn{
   margin-left:8px;
   padding:2px 6px;
