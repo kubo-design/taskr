@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Task Manager</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <section class="block storage-block">
+      <img class="app-logo" src="SVG/taskr_logo.svg" alt="TASKR" />
+    </section>
+
+    <section class="block new-block">
+      <details class="accordion new-accordion">
+        <summary>新規登録</summary>
+        <div class="accordion-body">
+          <form id="taskForm" class="new-form">
+            <div class="form-grid">
+          <div class="field">
+            <label class="label">案件名</label>
+            <div class="project-row">
+              <div class="inline-switch" role="group" aria-label="種別選択">
+                <button class="type-btn is-active" data-type="work" type="button">WORK</button>
+                <button class="type-btn" data-type="private" type="button">PRIVATE</button>
+              </div>
+              <div class="project-inputs">
+                <textarea id="projectInput" class="input auto-grow" rows="1" placeholder="記入欄" required maxlength="80"></textarea>
+                <div class="or">or</div>
+                <select id="projectSelect" class="select">
+                  <option value="">過去の案件から選ぶ</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label">やること</label>
+            <textarea id="todoInput" class="input auto-grow" rows="1" placeholder="記入欄" required maxlength="80"></textarea>
+            <div class="or">or</div>
+            <select id="todoSelect" class="select">
+              <option value="">過去のTODOから選ぶ</option>
+            </select>
+          </div>
+
+          <div class="field wide">
+            <label class="label">内容 / 備考 / 注意事項</label>
+            <textarea id="noteInput" class="textarea" rows="4" placeholder="記入欄"></textarea>
+            <input id="noteAttachments" class="input file-input" type="file" multiple
+              accept=".jpg,.jpeg,.png,.svg,.pdf" />
+            <div class="help-text">※添付（jpeg/jpg, png, svg, pdf / 1MBまで / 最大5件）<br />※20日後自動削除</div>
+          </div>
+
+          <div class="field">
+            <label class="label">期日</label>
+            <div class="date-row">
+              <span class="label small">日付</span>
+              <input id="dueInput" class="input" type="date" />
+            </div>
+            <div class="field submit">
+              <button class="btn-primary" type="submit">登録</button>
+            </div>
+          </div>
+            </div>
+          </form>
+          <section class="block blockless">
+            <div class="accordion-grid">
+              <details class="accordion blockless">
+                <summary>過去案件の整理</summary>
+                <div class="accordion-body">
+                  <ul id="projectHistory" class="history-list"></ul>
+                  <div class="history-actions">
+                    <button id="projectSelectAll" class="btn" type="button">全てを選択</button>
+                    <button id="projectDelete" class="btn" type="button">チェックした項目を削除</button>
+                  </div>
+                  <details class="trash-accordion">
+                    <summary>削除済み（戻す）※5分後自動削除</summary>
+                    <div class="accordion-body">
+                      <ul id="projectTrash" class="history-list"></ul>
+                    </div>
+                  </details>
+                </div>
+              </details>
+
+              <details class="accordion blockless">
+                <summary>過去TODOの整理</summary>
+                <div class="accordion-body">
+                  <ul id="todoHistory" class="history-list"></ul>
+                  <div class="history-actions">
+                    <button id="todoSelectAll" class="btn" type="button">全てを選択</button>
+                    <button id="todoDelete" class="btn" type="button">チェックした項目を削除</button>
+                  </div>
+                  <details class="trash-accordion">
+                    <summary>削除済み（戻す）※5分後自動削除</summary>
+                    <div class="accordion-body">
+                      <ul id="todoTrash" class="history-list"></ul>
+                    </div>
+                  </details>
+                </div>
+              </details>
+            </div>
+          </section>
+        </div>
+      </details>
+    </section>
+
+    <section class="block">
+      <details class="accordion" open>
+        <summary>案件リスト</summary>
+        <div class="accordion-body">
+          <div class="list-header">
+            <div class="filters">
+              <button class="filter-btn is-active" data-scope="active" data-filter="work" type="button">WORK</button>
+              <button class="filter-btn is-active" data-scope="active" data-filter="private" type="button">PRIVATE</button>
+            </div>
+            <div class="list-actions">
+              <div class="sorts" data-scope="active">
+                <button class="sort-btn is-active" data-sort="all" type="button"><span class="btn-line">全案件で</span><span class="btn-line">時間順</span></button>
+                <button class="sort-btn" data-sort="project" type="button"><span class="btn-line">案件別で</span><span class="btn-line">時間順</span></button>
+                <button class="sort-btn" data-sort="created" type="button"><span class="btn-line">登録順</span><span class="btn-line">ボタン</span></button>
+              </div>
+              <button id="toggleView" class="btn" type="button">カレンダー<br />で表示</button>
+            </div>
+          </div>
+
+          <div id="activeListView" class="table-wrap">
+            <table class="task-table">
+              <tbody id="activeList"></tbody>
+            </table>
+          </div>
+
+          <div id="calendarView" class="calendar is-hidden">
+            <div class="calendar-head">
+              <button id="prevMonth" class="btn" type="button">◀</button>
+              <div id="calendarTitle" class="calendar-title"></div>
+              <button id="nextMonth" class="btn" type="button">▶</button>
+            </div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+            <div class="calendar-undated">
+              <div class="calendar-subtitle">未定</div>
+              <ul id="calendarUndated" class="calendar-list"></ul>
+            </div>
+          </div>
+        </div>
+      </details>
+    </section>
+
+
+    <section class="block done-block">
+      <details class="accordion">
+        <summary>完了済リスト</summary>
+        <div class="accordion-body">
+          <div class="list-header">
+            <div class="filters">
+              <button class="filter-btn is-active" data-scope="done" data-filter="work" type="button">WORK</button>
+              <button class="filter-btn is-active" data-scope="done" data-filter="private" type="button">PRIVATE</button>
+            </div>
+            <div class="list-actions">
+              <div class="sorts" data-scope="done">
+                <button class="sort-btn is-active" data-sort="all" type="button">全案件で時間順</button>
+                <button class="sort-btn" data-sort="project" type="button">案件別で時間順</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="task-table">
+              <tbody id="doneList"></tbody>
+            </table>
+          </div>
+          <div class="history-actions">
+            <button id="doneSelectAll" class="btn" type="button">全てを選択</button>
+            <button id="doneDeleteSelected" class="btn" type="button">選択した項目の削除</button>
+          </div>
+          <details class="trash-accordion">
+            <summary>削除済み（戻す）※5分後自動削除</summary>
+            <div class="accordion-body">
+              <ul id="doneTrash" class="history-list"></ul>
+            </div>
+          </details>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <dialog id="editDialog" class="dialog">
+    <form id="editForm" class="dialog-inner" method="dialog">
+      <h3>編集</h3>
+      <input id="editId" type="hidden" />
+      <div class="dialog-grid">
+        <div class="field">
+          <label class="label">種別</label>
+          <div class="radio-row">
+            <label><input type="radio" name="editType" value="work" /> 仕事</label>
+            <label><input type="radio" name="editType" value="private" /> プライベート</label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">案件名</label>
+          <textarea id="editProject" class="input auto-grow" rows="1" required maxlength="80"></textarea>
+        </div>
+        <div class="field">
+          <label class="label">やること</label>
+          <textarea id="editTodo" class="input auto-grow" rows="1" required maxlength="80"></textarea>
+        </div>
+        <div class="field">
+          <label class="label">内容 / 備考 / 注意事項</label>
+          <textarea id="editNote" class="textarea" rows="3"></textarea>
+          <ul id="editAttachmentsList" class="attachment-list"></ul>
+          <input id="editAttachments" class="input file-input" type="file" multiple
+            accept=".jpg,.jpeg,.png,.svg,.pdf" />
+          <div class="help-text">※添付（jpeg/jpg, png, svg, pdf / 1MBまで / 最大5件）<br />※20日後自動削除</div>
+        </div>
+        <div class="field">
+          <label class="label">期日</label>
+          <input id="editDue" class="input" type="date" />
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button id="editCancel" class="btn" type="button">キャンセル</button>
+        <button class="btn-primary" type="submit">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="previewDialog" class="dialog">
+    <div class="dialog-inner">
+      <h3>案件内容</h3>
+      <div class="preview-grid">
+        <div class="preview-row"><span class="preview-label">種別</span><span id="previewType"></span></div>
+        <div class="preview-row"><span class="preview-label">案件名</span><span id="previewProject"></span></div>
+        <div class="preview-row"><span class="preview-label">やること</span><span id="previewTodo"></span></div>
+        <div class="preview-row"><span class="preview-label">内容 / 備考 / 注意事項</span><span id="previewNote"></span></div>
+        <div class="preview-row"><span class="preview-label">期日</span><span id="previewDue"></span></div>
+        <div class="preview-row preview-attachments is-hidden">
+          <span class="preview-label">添付</span>
+          <div id="previewAttachments"></div>
+        </div>
+      </div>
+      <div class="dialog-actions preview-actions">
+        <div class="preview-actions-left">
+          <button id="previewEdit" class="btn" type="button">編集</button>
+          <button id="previewDuplicate" class="btn" type="button">複製</button>
+          <button id="previewComplete" class="btn dark" type="button">完了</button>
+        </div>
+        <button id="previewClose" class="btn" type="button">閉じる</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
