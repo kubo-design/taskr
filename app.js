@@ -19,6 +19,7 @@ const els = {
   todoSelect: $("#todoSelect"),
   noteInput: $("#noteInput"),
   noteAttachments: $("#noteAttachments"),
+  dueRow: document.querySelector(".date-row"),
   dueInput: $("#dueInput"),
   projectHistory: $("#projectHistory"),
   projectTrash: $("#projectTrash"),
@@ -52,6 +53,7 @@ const els = {
   editAttachments: $("#editAttachments"),
   editAttachmentsList: $("#editAttachmentsList"),
   editDue: $("#editDue"),
+  editDueRow: $("#editDue")?.closest(".field"),
   editCancel: $("#editCancel"),
   previewDialog: $("#previewDialog"),
   previewType: $("#previewType"),
@@ -1000,6 +1002,19 @@ els.todoSelect.addEventListener("change", (e) => {
     autoGrowTextArea(els.todoInput);
   }
 });
+
+function bindDateRow(row, input) {
+  if (!row || !input) return;
+  row.addEventListener("click", (e) => {
+    input.focus();
+    if (typeof input.showPicker === "function") {
+      input.showPicker();
+    }
+  });
+}
+
+bindDateRow(els.dueRow, els.dueInput);
+bindDateRow(els.editDueRow, els.editDue);
 
 [els.projectInput, els.todoInput, els.editProject, els.editTodo].forEach((input) => {
   if (!input) return;

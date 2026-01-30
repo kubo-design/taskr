@@ -8,15 +8,33 @@
   --work:#2f66ff;
   --private:#22a06b;
   --danger:#c73333;
+  --base-font-mobile:13px;
+  --base-font-desktop:clamp(11.2px, 0.801vw + 4.8px, 16px);
 }
 
 *{box-sizing:border-box}
-html,body{height:100%}
+html{
+  height:100%;
+  font-size:var(--base-font-mobile);
+}
+body{height:100%}
 body{
   margin:0;
   background:var(--bg);
   color:var(--text);
   font-family:"BIZ UDPGothic","Yu Gothic","Hiragino Sans",sans-serif;
+}
+button,
+input,
+select,
+textarea{
+  font:inherit;
+}
+
+@media (min-width: 801px){
+  html{
+    font-size:var(--base-font-desktop);
+  }
 }
 
 .app-logo{
@@ -42,9 +60,9 @@ body{
 .type-btn{
   border:1px solid var(--line);
   background:#fff;
-  padding:4px 10px;
+  padding:5px 10px;
   cursor:pointer;
-  font-size:12px;
+  font-size:0.75rem;
   flex:1;
   border-radius:5px;
 }
@@ -84,6 +102,7 @@ body{
   border:1px solid var(--line);
   margin:18px 0;
   padding:16px;
+  border-radius:10px;
 }
 .block.done-block{
   background:#f7f7f7;
@@ -137,7 +156,7 @@ body{
     grid-template-columns:1fr;
   }
   .inline-switch .type-btn{
-    height:calc(var(--field-h) * 1.5);
+    height:calc(var(--field-h) * 1.2);
   }
   .list-header{
     grid-template-columns: initial !important;
@@ -152,13 +171,13 @@ body{
     grid-area:title;
   }
   .block-title{
-    font-size:20px;
+    font-size:1.25rem;
   }
   .accordion summary{
-    font-size:20px;
+    font-size:1.25rem;
   }
   .new-form .label{
-    font-size:18px;
+    font-size:1.125rem;
   }
   .filters{
     grid-area:filters;
@@ -177,6 +196,9 @@ body{
   }
   .sorts .btn-line{
     display:block;
+  }
+  .sort-btn{
+    line-height:1.2;
   }
   .table-wrap{
     overflow:visible;
@@ -220,12 +242,12 @@ body{
     display:block;
     border:none;
     padding:6px 10px;
-    font-size:18px;
+    font-size:1.125rem;
     word-break:break-word;
     width:100%;
   }
   #activeListView .task-table td.note-cell{
-    font-size:16px;
+    font-size:1rem;
     line-height:1.4;
   }
   #activeListView .task-table td:nth-child(1){
@@ -245,11 +267,12 @@ body{
   }
   #activeListView .task-table td:nth-child(1),
   #activeListView .task-table td:nth-child(2){
-    min-height:52px;
+    min-height:0;
+    padding:2px 10px;
   }
-  #activeListView .task-table td:nth-child(3){grid-area:project; border-top:1px solid var(--line); padding:15px 10px;}
-  #activeListView .task-table td:nth-child(4){grid-area:todo; border-top:1px solid var(--line); padding:15px 10px;}
-  #activeListView .task-table td:nth-child(5){grid-area:note; border-top:1px solid var(--line); padding:15px 10px;}
+  #activeListView .task-table td:nth-child(3){grid-area:project; border-top:1px solid var(--line); padding:10px 10px;}
+  #activeListView .task-table td:nth-child(4){grid-area:todo; border-top:1px solid var(--line); padding:10px 10px;}
+  #activeListView .task-table td:nth-child(5){grid-area:note; border-top:1px solid var(--line); padding:10px 10px;}
   #activeListView .task-table td:nth-child(6){grid-area:due; border-top:1px solid var(--line); padding:10px 10px;}
   #activeListView .task-table td:nth-child(7){grid-area:actions; border-top:1px solid var(--line); padding:10px 10px;}
   #activeListView .due-stack{
@@ -277,12 +300,15 @@ body{
   #activeListView .action-grid .action-row.bottom .btn{
     width:100%;
     height:auto;
-    padding:16px 10px;
+    padding:10px 10px;
+  }
+  #activeListView .action-row .btn[data-action="reschedule"]{
+    padding:7px 10px;
   }
   #activeListView .due-stack .btn{
     width:auto;
     height:auto;
-    padding:12px 26px;
+    padding:10px 26px;
   }
   #doneList{
     display:block;
@@ -305,12 +331,12 @@ body{
     display:block;
     border:none;
     padding:6px 10px;
-    font-size:18px;
+    font-size:1.125rem;
     word-break:break-word;
     width:100%;
   }
   #doneList td.note-cell{
-    font-size:16px;
+    font-size:1rem;
     line-height:1.4;
   }
   #doneList td:nth-child(1){
@@ -339,11 +365,12 @@ body{
   #doneList td:nth-child(1),
   #doneList td:nth-child(2),
   #doneList td:nth-child(3){
-    min-height:52px;
+    min-height:0;
+    padding:2px 10px;
   }
-  #doneList td:nth-child(4){grid-area:project; border-top:1px solid var(--line); padding:15px 10px;}
-  #doneList td:nth-child(5){grid-area:todo; border-top:1px solid var(--line); padding:15px 10px;}
-  #doneList td:nth-child(6){grid-area:note; border-top:1px solid var(--line); padding:15px 10px;}
+  #doneList td:nth-child(4){grid-area:project; border-top:1px solid var(--line); padding:10px 10px;}
+  #doneList td:nth-child(5){grid-area:todo; border-top:1px solid var(--line); padding:10px 10px;}
+  #doneList td:nth-child(6){grid-area:note; border-top:1px solid var(--line); padding:10px 10px;}
   #doneList td:nth-child(7){grid-area:due; border-top:1px solid var(--line); padding:10px 10px;}
   #doneList td:nth-child(8){grid-area:actions; border-top:1px solid var(--line); padding:10px 10px;}
   #doneList .action-row{
@@ -354,19 +381,19 @@ body{
   }
   #doneList .action-row .btn{
     width:100%;
-    padding:16px 10px;
+    padding:10px 10px;
   }
   .badge{
-    font-size:20px;
+    font-size:1.25rem;
   }
 }
 .storage-status{
-  font-size:12px;
+  font-size:0.75rem;
   color:var(--muted);
 }
 .block-title{
   margin:0 0 12px;
-  font-size:16px;
+  font-size:1rem;
 }
 
 .new-form .form-grid{
@@ -400,14 +427,17 @@ body{
 }
 .field.wide{grid-column: span 1;}
 
-.label{font-size:12px; color:var(--muted)}
-.label.small{font-size:11px;}
+.label{font-size:0.75rem; color:var(--muted)}
+.label.small{font-size:0.6875rem;}
+.date-row .label{
+  cursor:pointer;
+}
 
 .input,.select,.textarea{
   width:100%;
   border:1px solid var(--line);
   padding:8px 10px;
-  font-size:14px;
+  font-size:0.875rem;
   background:#fff;
 }
 .file-input{
@@ -418,10 +448,10 @@ body{
   border:1px solid var(--line);
 }
 .help-text{
-  font-size:11px;
+  font-size:0.6875rem;
   color:var(--muted);
   margin-top:4px;
-  line-height:1.2;
+  line-height:1.6;
 }
 .textarea{resize:vertical;}
 
@@ -458,13 +488,14 @@ body{
 .or{
   text-align:center;
   color:var(--muted);
-  font-size:12px;
+  font-size:0.75rem;
 }
 
 .date-row{
   display:flex;
   align-items:center;
   gap:8px;
+  cursor:pointer;
 }
 
 .field.submit{
@@ -482,7 +513,7 @@ body{
   padding:0 10px;
   width:100%;
   cursor:pointer;
-  font-size:14px;
+  font-size:0.875rem;
   border-radius:5px;
 }
 
@@ -535,11 +566,11 @@ body{
     font-size:0.85em;
   }
   .accordion-grid .history-text{
-    font-size:14px;
+    font-size:0.875rem;
     line-height:1.2;
   }
   .accordion-grid .trash-accordion .history-text{
-    font-size:14px;
+    font-size:0.875rem;
     line-height:1.2;
   }
 }
@@ -605,7 +636,7 @@ body{
   gap:6px;
 }
 .history-subtitle{
-  font-size:12px;
+  font-size:0.75rem;
   color:var(--muted);
   margin:8px 0 6px;
 }
@@ -658,7 +689,7 @@ body{
 .attachment-list .btn{
   margin-left:8px;
   padding:2px 6px;
-  font-size:11px;
+  font-size:0.6875rem;
 }
 
 .list-header{
@@ -685,7 +716,7 @@ body{
 .filters{display:flex; gap:8px;}
 .filter-btn{
   border:1px solid var(--line);
-  padding:9.5px 10px 8.5px;
+  padding:5px 10px;
   background:#fff;
   cursor:pointer;
   border-radius:5px;
@@ -715,6 +746,9 @@ body{
 .btn-line{display:inline;}
 
 @media (min-width: 801px){
+  .block{
+    padding:6px 10px;
+  }
   .storage-block{
     display:flex;
     align-items:center;
@@ -770,13 +804,13 @@ body{
   border-collapse:collapse;
   border:0;
   table-layout:fixed;
-  min-width:980px;
+  min-width:0;
 }
 .task-table th,
 .task-table td{
   border:0;
   padding:6px 8px;
-  font-size:13px;
+  font-size:0.8125rem;
   vertical-align:middle;
 }
 .task-table thead th{
@@ -804,7 +838,7 @@ body{
   color:#fff;
   font-weight:700;
   border-radius:4px;
-  font-size:12px;
+  font-size:0.75rem;
 }
 .badge.work{background:var(--work);}
 .badge.private{background:var(--private);}
@@ -832,20 +866,20 @@ body{
 
 @media (max-width: 800px){
   .badge{
-    font-size:18px;
+    font-size:1.125rem;
   }
   #activeListView .task-table .btn,
   #doneList .btn{
-    font-size:15px;
+    font-size:0.9375rem;
   }
   .block-title{
-    font-size:20px;
+    font-size:1.25rem;
   }
   .accordion summary{
-    font-size:20px;
+    font-size:1.25rem;
   }
   .note-cell{
-    font-size:16px;
+    font-size:1rem;
     line-height:1.4;
   }
 }
@@ -866,7 +900,7 @@ body{
 .risk-past{color:var(--danger);}
 
 .action-row{display:flex; gap:6px; flex-wrap:nowrap;}
-.action-row .btn{padding:4px 8px; font-size:12px;}
+.action-row .btn{padding:4px 8px; font-size:0.75rem;}
 .action-row .btn.dark{background:#222; color:#fff;}
 .action-row .btn.is-minus{
   background:#aaaaaa;
@@ -885,20 +919,35 @@ body{
   }
   .task-table th,
   .task-table td{
-    font-size:15px;
+    font-size:0.9375rem;
   }
   .note-cell{
     line-height:1.4;
   }
   .note-cell .note-text{
-    font-size:14px;
+    font-size:0.875rem;
+  }
+}
+
+@media (min-width: 1200px){
+  .col-due{
+    width:200px;
+  }
+  #activeListView .due-stack .action-row{
+    flex-wrap:nowrap;
+    gap:4px;
+  }
+  #activeListView .due-stack .action-row .btn{
+    padding:3px 4px;
+    font-size:0.6875rem;
+    min-width:0;
   }
 }
 
 @media (max-width: 800px){
   #activeListView .note-cell,
   #doneList .note-cell{
-    font-size:16px;
+    font-size:1rem;
     line-height:1.4;
   }
 }
@@ -906,7 +955,7 @@ body{
 @media (max-width: 800px){
   #activeListView .note-cell .note-text,
   #doneList .note-cell .note-text{
-    font-size:15px;
+    font-size:0.9375rem;
     line-height:1.4;
   }
 }
@@ -914,14 +963,14 @@ body{
 @media (max-width: 800px){
   .accordion-grid .accordion summary,
   .accordion-grid .trash-accordion summary{
-    font-size:16px;
+    font-size:1rem;
   }
   .done-block .trash-accordion summary{
-    font-size:16px;
+    font-size:1rem;
   }
   .accordion-grid .history-text{
     line-height:1.2;
-    font-size:14px;
+    font-size:0.875rem;
   }
 }
 
@@ -973,7 +1022,7 @@ body{
   background:#fff;
 }
 .calendar-day{
-  font-size:12px;
+  font-size:0.75rem;
   color:var(--muted);
   margin-bottom:4px;
   display:flex;
@@ -998,7 +1047,7 @@ body{
   gap:4px;
 }
 .calendar-item{
-  font-size:12px;
+  font-size:0.75rem;
   border:1px solid var(--line);
   padding:2px 4px;
   display:flex;
@@ -1044,7 +1093,7 @@ body{
 .dialog-actions .btn-primary{
   flex:1 1 auto;
 }
-.radio-row{display:flex; gap:12px; font-size:14px;}
+.radio-row{display:flex; gap:12px; font-size:0.875rem;}
 .preview-actions{
   justify-content:space-between;
 }
@@ -1071,7 +1120,7 @@ body{
 }
 .preview-label{
   color:var(--muted);
-  font-size:12px;
+  font-size:0.75rem;
 }
 .preview-attachments .attachment-list{
   margin:0;
