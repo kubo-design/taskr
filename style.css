@@ -130,6 +130,10 @@ textarea{
 }
 
 @media (max-width: 800px){
+  .accordion-body{
+    padding-top:0;
+    padding-bottom:0;
+  }
   .storage-block{
     display:flex;
     flex-direction:row;
@@ -159,13 +163,15 @@ textarea{
     height:calc(var(--field-h) * 1.2);
   }
   .list-header{
-    grid-template-columns: initial !important;
+    grid-template-columns: 1fr auto !important;
     grid-template-areas:
       "title title"
-      "sorts toggle"
+      "sorts sorts"
       "filters toggle";
     align-items:start;
     row-gap:10px;
+    margin-bottom:10px;
+    gap:8px;
   }
   .list-header .block-title{
     grid-area:title;
@@ -191,14 +197,16 @@ textarea{
   #toggleView{
     grid-area:toggle;
     justify-self:end;
-    height:calc(var(--field-h) * 2);
-    padding:39px 10px;
+    height:auto;
+    padding:6px 10px;
+    align-self:center;
   }
   .sorts .btn-line{
-    display:block;
+    display:inline;
   }
   .sort-btn{
     line-height:1.2;
+    white-space:nowrap;
   }
   .table-wrap{
     overflow:visible;
@@ -226,17 +234,24 @@ textarea{
   }
   #activeListView .task-table tr{
     display:grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 64px 1fr;
     grid-template-areas:
-      "badge risk"
-      "project project"
-      "todo todo"
+      "badge project"
+      "risk todo"
       "note note"
       "due due"
       "actions actions";
-    border:1px solid #898989;
-    margin-bottom:25px;
+    border-left:1px solid #000;
+    border-right:1px solid #000;
+    border-bottom:3px solid #000;
+    margin-bottom:0;
     padding:0;
+  }
+  #activeListView .task-table tr:first-child{
+    border-top:1px solid #000;
+  }
+  #activeListView .task-table tr:last-child{
+    border-bottom:1px solid #000;
   }
   #activeListView .task-table td{
     display:block;
@@ -263,7 +278,7 @@ textarea{
     align-items:center;
     justify-content:center;
     padding:10px;
-    border-left:1px solid var(--line);
+    border-right:1px solid var(--line);
   }
   #activeListView .task-table td:nth-child(1),
   #activeListView .task-table td:nth-child(2){
@@ -276,14 +291,14 @@ textarea{
   #activeListView .task-table td:nth-child(6){grid-area:due; border-top:1px solid var(--line); padding:10px 10px;}
   #activeListView .task-table td:nth-child(7){grid-area:actions; border-top:1px solid var(--line); padding:10px 10px;}
   #activeListView .due-stack{
-    flex-direction:column;
-    align-items:stretch;
-    gap:10px;
+    flex-direction:row;
+    align-items:center;
+    gap:8px;
     flex-wrap:nowrap;
   }
   #activeListView .action-row{
     gap:6px;
-    width:100%;
+    width:auto;
     justify-content:flex-start;
   }
   #activeListView .action-grid{
@@ -310,22 +325,32 @@ textarea{
     height:auto;
     padding:10px 26px;
   }
+  #activeListView .due-stack .due-date{
+    white-space:nowrap;
+  }
   #doneList{
     display:block;
   }
   #doneList tr{
     display:grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 48px 1fr;
     grid-template-areas:
-      "check badge risk"
-      "project project project"
-      "todo todo todo"
-      "note note note"
-      "due due due"
-      "actions actions actions";
-    border:1px solid #898989;
-    margin-bottom:25px;
+      "check project"
+      "badge todo"
+      "note note"
+      "due due"
+      "actions actions";
+    border-left:1px solid #000;
+    border-right:1px solid #000;
+    border-bottom:3px solid #000;
+    margin-bottom:0;
     padding:0;
+  }
+  #doneList tr:first-child{
+    border-top:1px solid #000;
+  }
+  #doneList tr:last-child{
+    border-bottom:1px solid #000;
   }
   #doneList td{
     display:block;
@@ -352,15 +377,10 @@ textarea{
     align-items:center;
     justify-content:center;
     padding:10px;
-    border-left:1px solid var(--line);
   }
   #doneList td:nth-child(3){
     grid-area:risk;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:10px;
-    border-left:1px solid var(--line);
+    display:none;
   }
   #doneList td:nth-child(1),
   #doneList td:nth-child(2),
@@ -368,8 +388,8 @@ textarea{
     min-height:0;
     padding:2px 10px;
   }
-  #doneList td:nth-child(4){grid-area:project; border-top:1px solid var(--line); padding:10px 10px;}
-  #doneList td:nth-child(5){grid-area:todo; border-top:1px solid var(--line); padding:10px 10px;}
+  #doneList td:nth-child(4){grid-area:project; border-top:1px solid var(--line); border-left:1px solid var(--line); padding:10px 10px;}
+  #doneList td:nth-child(5){grid-area:todo; border-top:1px solid var(--line); border-left:1px solid var(--line); padding:10px 10px;}
   #doneList td:nth-child(6){grid-area:note; border-top:1px solid var(--line); padding:10px 10px;}
   #doneList td:nth-child(7){grid-area:due; border-top:1px solid var(--line); padding:10px 10px;}
   #doneList td:nth-child(8){grid-area:actions; border-top:1px solid var(--line); padding:10px 10px;}
@@ -439,6 +459,12 @@ textarea{
   padding:8px 10px;
   font-size:0.875rem;
   background:#fff;
+}
+
+@supports (-webkit-touch-callout: none){
+  .input,.select,.textarea{
+    font-size:16px;
+  }
 }
 .file-input{
   padding:6px 8px;
@@ -955,6 +981,10 @@ textarea{
     font-size:1rem;
     line-height:1.4;
   }
+  #activeListView .note-cell.note-empty,
+  #doneList .note-cell.note-empty{
+    display:none;
+  }
 }
 
 @media (max-width: 800px){
@@ -976,6 +1006,29 @@ textarea{
   .accordion-grid .history-text{
     line-height:1.2;
     font-size:0.875rem;
+  }
+}
+
+@media (max-width: 800px){
+  .accordion-body{
+    padding-top:0;
+    padding-bottom:0;
+  }
+  .list-header{
+    gap:8px;
+  }
+  .block{
+    padding:4px 10px;
+    margin:10px 0;
+  }
+  .active-block{
+    padding-bottom:10px;
+  }
+  .app-logo{
+    width:100px;
+  }
+  .block.done-block .history-actions{
+    margin:15px 0;
   }
 }
 
