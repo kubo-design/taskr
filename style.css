@@ -176,7 +176,7 @@ textarea{
     grid-template-areas:
       "title title"
       "sorts sorts"
-      "filters toggle";
+      "filters filters";
     align-items:start;
     row-gap:10px;
     margin-bottom:10px;
@@ -198,14 +198,16 @@ textarea{
     grid-area:filters;
   }
   .list-header .list-actions{
-    display:contents;
+    display:flex;
+    grid-area:sorts;
+    align-items:center;
+    gap:6px;
+    justify-content:flex-start;
   }
   .sorts{
-    grid-area:sorts;
+    grid-area:auto;
   }
   #toggleView{
-    grid-area:toggle;
-    justify-self:end;
     height:auto;
     padding:6px 10px;
     align-self:center;
