@@ -152,6 +152,9 @@ textarea{
     justify-content:flex-end;
     margin-top:0;
   }
+  .block.done-block{
+    margin-bottom:48px;
+  }
   .inline-switch{
     flex-direction:row;
     height:auto;
@@ -1048,6 +1051,12 @@ textarea{
   .block{
     padding:4px 10px;
     margin:10px 0;
+  }
+  .block.done-block{
+    margin-bottom:40px;
+  }
+  .container{
+    padding-bottom:30px;
   }
   .active-block{
     padding-bottom:10px;
