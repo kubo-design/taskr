@@ -224,6 +224,8 @@ textarea{
   }
   .label-row .btn.small.note-undo{
     margin-left:auto;
+    font-size:1.03125rem;
+    padding:2px 4px;
   }
   .table-wrap{
     overflow:visible;
