@@ -15,7 +15,7 @@
   <main class="container">
     <section class="block storage-block">
       <img class="app-logo" src="SVG/taskr_logo.svg" alt="TASKR" />
-      <div class="app-version">ver.1.0.3</div>
+      <div class="app-version">ver.1.0.4</div>
     </section>
 
     <section class="block new-block">
@@ -51,7 +51,10 @@
           </div>
 
           <div class="field wide">
-            <label class="label">内容 / 備考 / 注意事項</label>
+            <div class="label-row">
+              <label class="label">内容 / 備考 / 注意事項</label>
+              <button id="noteAddCheckbox" class="btn small" type="button">チェックボックス追加</button>
+            </div>
             <textarea id="noteInput" class="textarea" rows="4" placeholder="記入欄"></textarea>
             <input id="noteAttachments" class="input file-input" type="file" multiple
               accept=".jpg,.jpeg,.png,.svg,.pdf" />
@@ -224,7 +227,10 @@
           <textarea id="editTodo" class="input auto-grow" rows="1" required maxlength="80"></textarea>
         </div>
         <div class="field">
-          <label class="label">内容 / 備考 / 注意事項</label>
+          <div class="label-row">
+            <label class="label">内容 / 備考 / 注意事項</label>
+            <button id="editNoteAddCheckbox" class="btn small" type="button">チェックボックス追加</button>
+          </div>
           <textarea id="editNote" class="textarea" rows="3"></textarea>
           <ul id="editAttachmentsList" class="attachment-list"></ul>
           <input id="editAttachments" class="input file-input" type="file" multiple

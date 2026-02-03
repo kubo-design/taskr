@@ -19,6 +19,7 @@ const els = {
   todoSelect: $("#todoSelect"),
   noteInput: $("#noteInput"),
   noteAttachments: $("#noteAttachments"),
+  noteAddCheckbox: $("#noteAddCheckbox"),
   dueRow: document.querySelector(".date-row"),
   dueInput: $("#dueInput"),
   dueTimeRow: $("#dueTimeRow"),
@@ -54,6 +55,7 @@ const els = {
   editProject: $("#editProject"),
   editTodo: $("#editTodo"),
   editNote: $("#editNote"),
+  editNoteAddCheckbox: $("#editNoteAddCheckbox"),
   editAttachments: $("#editAttachments"),
   editAttachmentsList: $("#editAttachmentsList"),
   editDue: $("#editDue"),
@@ -907,7 +909,7 @@ function renderActiveList(tasks) {
     const hasNote = Boolean(t.note && t.note.trim());
     const hasAttachments = Boolean(t.attachments && t.attachments.length);
     const noteClass = !hasNote && !hasAttachments ? "note-empty" : "";
-    const noteText = hasNote ? renderNoteLines(t.note) : (hasAttachments ? "" : "内 / 備 / 注なし");
+    const noteText = hasNote ? renderNoteLines(t) : (hasAttachments ? "" : "内 / 備 / 注なし");
     return `<tr>
       <td class="col-mini badge-cell ${t.type}"><span class="badge ${t.type}">${t.type === "work" ? "W" : "P"}</span></td>
       <td class="col-mini"><span class="risk-label ${risk.className}">${risk.text}</span></td>
@@ -955,7 +957,7 @@ function renderDoneList(tasks) {
     const hasNote = Boolean(t.note && t.note.trim());
     const hasAttachments = Boolean(t.attachments && t.attachments.length);
     const noteClass = !hasNote && !hasAttachments ? "note-empty" : "";
-    const noteText = hasNote ? renderNoteLines(t.note) : (hasAttachments ? "" : "内 / 備 / 注なし");
+    const noteText = hasNote ? renderNoteLines(t) : (hasAttachments ? "" : "内 / 備 / 注なし");
     return `<tr>
       <td class="col-mini"><input type="checkbox" class="done-check" data-id="${t.id}"></td>
       <td class="col-mini badge-cell ${t.type}"><span class="badge ${t.type}">${t.type === "work" ? "W" : "P"}</span></td>
@@ -1163,15 +1165,22 @@ function linkifyText(value) {
   return result;
 }
 
-function renderNoteLines(value) {
-  const text = value || "";
+function renderNoteLines(task) {
+  const text = task?.note || "";
   if (!text) return "";
   const lines = text.split(/\r?\n/);
-  const items = lines.map((line) => {
-    if (!line.trim()) return "";
-    const html = linkifyText(line);
-    return `<label class="note-line"><input type="checkbox" class="note-check"><span class="note-line-text">${html}</span></label>`;
-  }).filter(Boolean);
+  const items = lines.map((line, index) => {
+    const match = line.match(/^\s*(?:\[( |x|X)\]|[☐☑])\s*(.*)$/);
+    if (match) {
+      const marker = match[0].trim().startsWith("☑") || match[1]?.toLowerCase() === "x";
+      const checked = marker ? "checked" : "";
+      const content = match[2] || "";
+      const html = linkifyText(content);
+      return `<label class="note-line-row note-line"><input type="checkbox" class="note-check" data-id="${task.id}" data-line-index="${index}" ${checked}><span class="note-line-text">${html}</span></label>`;
+    }
+    if (!line.trim()) return `<div class="note-line-row">&nbsp;</div>`;
+    return `<div class="note-line-row">${linkifyText(line)}</div>`;
+  });
   return items.join("");
 }
 
@@ -1343,6 +1352,56 @@ setupTimeToggle({
   autoGrowTextArea(input);
   input.addEventListener("input", () => autoGrowTextArea(input));
 });
+
+function applyNoteCheckboxes(text, start, end) {
+  const lines = text.split(/\r?\n/);
+  const lineStarts = [];
+  let pos = 0;
+  lines.forEach((line, idx) => {
+    lineStarts[idx] = pos;
+    pos += line.length + 1;
+  });
+
+  const findLineIndex = (offset) => {
+    for (let i = 0; i < lineStarts.length; i += 1) {
+      const nextStart = i + 1 < lineStarts.length ? lineStarts[i + 1] : text.length + 1;
+      if (offset >= lineStarts[i] && offset < nextStart) return i;
+    }
+    return lineStarts.length - 1;
+  };
+
+  const startLine = findLineIndex(start);
+  const endLine = start === end ? startLine : findLineIndex(end);
+  let addedBeforeStart = 0;
+  let addedBeforeEnd = 0;
+
+  for (let i = startLine; i <= endLine; i += 1) {
+    const line = lines[i];
+    if (line.match(/^\s*(?:\[( |x|X)\]|[☐☑])\s*/)) continue;
+    lines[i] = `☐ ${line}`;
+    if (i === startLine) addedBeforeStart += 2;
+    addedBeforeEnd += 2;
+  }
+
+  const nextText = lines.join("\n");
+  const nextStart = start + (start === end ? addedBeforeStart : 0);
+  const nextEnd = end + addedBeforeEnd;
+  return { text: nextText, start: nextStart, end: nextEnd };
+}
+
+const handleNoteAddCheckbox = (textarea) => {
+  if (!textarea) return;
+  const start = textarea.selectionStart ?? 0;
+  const end = textarea.selectionEnd ?? start;
+  const { text, start: nextStart, end: nextEnd } = applyNoteCheckboxes(textarea.value, start, end);
+  textarea.value = text;
+  textarea.focus();
+  textarea.setSelectionRange(nextStart, nextEnd);
+  autoGrowTextArea(textarea);
+};
+
+els.noteAddCheckbox?.addEventListener("click", () => handleNoteAddCheckbox(els.noteInput));
+els.editNoteAddCheckbox?.addEventListener("click", () => handleNoteAddCheckbox(els.editNote));
 
 els.form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -1597,6 +1656,32 @@ els.activeList.addEventListener("click", async (e) => {
   render();
 });
 
+const handleNoteCheckChange = (e) => {
+  const input = e.target.closest(".note-check");
+  if (!input) return;
+  const id = input.dataset.id;
+  const lineIndex = Number(input.dataset.lineIndex);
+  if (!id || !Number.isFinite(lineIndex)) return;
+  const tasks = loadTasks();
+  const task = tasks.find((t) => t.id === id);
+  if (!task || !task.note) return;
+  const lines = task.note.split(/\r?\n/);
+  if (lineIndex < 0 || lineIndex >= lines.length) return;
+  const line = lines[lineIndex];
+  const match = line.match(/^(\s*)(?:\[( |x|X)\]|([☐☑]))(\s*)(.*)$/);
+  if (!match) return;
+  const prefix = match[1] || "";
+  const spacer = match[4] || "";
+  const content = match[5] || "";
+  const mark = input.checked ? "☑" : "☐";
+  lines[lineIndex] = `${prefix}${mark}${spacer}${content}`;
+  task.note = lines.join("\n");
+  task.updatedAt = Date.now();
+  saveTasks(tasks);
+};
+
+els.activeList.addEventListener("change", handleNoteCheckChange);
+
 els.doneList.addEventListener("click", async (e) => {
   const btn = e.target.closest("button");
   if (!btn) return;
@@ -1651,6 +1736,9 @@ els.doneList.addEventListener("click", async (e) => {
   saveTasks(tasks);
   render();
 });
+
+els.doneList.addEventListener("change", handleNoteCheckChange);
+
 
 els.projectHistory.addEventListener("click", (e) => {
   const btn = e.target.closest("button");
