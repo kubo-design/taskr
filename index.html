@@ -15,6 +15,7 @@
   <main class="container">
     <section class="block storage-block">
       <img class="app-logo" src="SVG/taskr_logo.svg" alt="TASKR" />
+      <div class="app-version">ver.1.0.2</div>
     </section>
 
     <section class="block new-block">
@@ -123,6 +124,9 @@
             <div class="filters">
               <button class="filter-btn is-active" data-scope="active" data-filter="work" type="button">WORK</button>
               <button class="filter-btn is-active" data-scope="active" data-filter="private" type="button">PRIVATE</button>
+              <select id="activeProjectFilter" class="select project-filter">
+                <option value="all">すべての案件</option>
+              </select>
             </div>
             <div class="list-actions">
               <div class="sorts" data-scope="active">
@@ -130,7 +134,7 @@
                 <button class="sort-btn" data-sort="project" type="button"><span class="btn-line">案件別で</span><span class="btn-line">時間順</span></button>
                 <button class="sort-btn" data-sort="created" type="button"><span class="btn-line">登録順</span></button>
               </div>
-              <button id="toggleView" class="btn" type="button">カレンダー<br />で表示</button>
+              <button id="toggleView" class="btn" type="button">カレンダー</button>
             </div>
           </div>
 

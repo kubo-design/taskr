@@ -45,6 +45,12 @@ textarea{
   margin-bottom:8px;
   z-index:10;
 }
+.app-version{
+  font-size:0.75rem;
+  color:var(--muted);
+  margin-left:auto;
+  white-space:nowrap;
+}
 
 .container{
   width:min(1200px, 92vw);
@@ -734,6 +740,24 @@ textarea{
   word-break:break-word;
   overflow-wrap:anywhere;
 }
+.note-text{
+  white-space:pre-wrap;
+}
+.note-line{
+  display:flex;
+  align-items:flex-start;
+  gap:6px;
+  margin:2px 0;
+}
+.note-check{
+  margin-top:2px;
+}
+.note-check:checked + .note-line-text{
+  color:#9a9a9a;
+}
+.note-line-text{
+  display:block;
+}
 .note-text:empty{
   display:none;
 }
@@ -782,6 +806,9 @@ textarea{
 }
 
 .filters{display:flex; gap:8px;}
+.project-filter{
+  min-width:180px;
+}
 .filter-btn{
   border:1px solid var(--line);
   padding:5px 10px;

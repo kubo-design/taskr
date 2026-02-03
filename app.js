@@ -38,6 +38,7 @@ const els = {
   filterButtons: document.querySelectorAll(".filter-btn"),
   sortButtons: document.querySelectorAll(".sort-btn"),
   toggleView: $("#toggleView"),
+  activeProjectFilter: $("#activeProjectFilter"),
   activeList: $("#activeList"),
   doneList: $("#doneList"),
   activeListView: $("#activeListView"),
@@ -92,6 +93,7 @@ const state = {
   },
   sortActive: "all",
   sortDone: "all",
+  activeProjectFilter: "all",
   view: "list",
   calendarMonth: new Date().getMonth(),
   calendarYear: new Date().getFullYear()
@@ -859,13 +861,44 @@ function renderAttachmentList(attachments) {
   return `<ul class="attachment-list">${items}</ul>`;
 }
 
+function getUniqueProjects(tasks) {
+  const set = new Set();
+  tasks.forEach((t) => {
+    const name = (t.project || "").trim();
+    if (name) set.add(name);
+  });
+  return Array.from(set).sort((a, b) => a.localeCompare(b, "ja"));
+}
+
+function renderActiveProjectOptions(tasks) {
+  if (!els.activeProjectFilter) return;
+  const projects = getUniqueProjects(tasks);
+  if (state.activeProjectFilter !== "all" && !projects.includes(state.activeProjectFilter)) {
+    state.activeProjectFilter = "all";
+  }
+  const options = [`<option value="all">すべての案件</option>`];
+  if (projects.length) {
+    options.push(`<option value="" disabled>──────────</option>`);
+    projects.forEach((name) => {
+      options.push(`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`);
+    });
+  }
+  els.activeProjectFilter.innerHTML = options.join("");
+  els.activeProjectFilter.value = state.activeProjectFilter;
+}
+
 function renderActiveList(tasks) {
-  const filtered = tasks.filter((t) => {
+  const typeFiltered = tasks.filter((t) => {
     if (t.done) return false;
     if (t.type === "work" && !state.filters.active.work) return false;
     if (t.type === "private" && !state.filters.active.private) return false;
     return true;
   });
+
+  renderActiveProjectOptions(typeFiltered);
+  const filtered = state.activeProjectFilter === "all"
+    ? typeFiltered
+    : typeFiltered.filter((t) => (t.project || "").trim() === state.activeProjectFilter);
 
   const sorted = applyActiveSort(filtered);
   els.activeList.innerHTML = sorted.map((t) => {
@@ -874,7 +907,7 @@ function renderActiveList(tasks) {
     const hasNote = Boolean(t.note && t.note.trim());
     const hasAttachments = Boolean(t.attachments && t.attachments.length);
     const noteClass = !hasNote && !hasAttachments ? "note-empty" : "";
-    const noteText = hasNote ? linkifyText(t.note) : (hasAttachments ? "" : "内 / 備 / 注なし");
+    const noteText = hasNote ? renderNoteLines(t.note) : (hasAttachments ? "" : "内 / 備 / 注なし");
     return `<tr>
       <td class="col-mini badge-cell ${t.type}"><span class="badge ${t.type}">${t.type === "work" ? "W" : "P"}</span></td>
       <td class="col-mini"><span class="risk-label ${risk.className}">${risk.text}</span></td>
@@ -922,7 +955,7 @@ function renderDoneList(tasks) {
     const hasNote = Boolean(t.note && t.note.trim());
     const hasAttachments = Boolean(t.attachments && t.attachments.length);
     const noteClass = !hasNote && !hasAttachments ? "note-empty" : "";
-    const noteText = hasNote ? linkifyText(t.note) : (hasAttachments ? "" : "内 / 備 / 注なし");
+    const noteText = hasNote ? renderNoteLines(t.note) : (hasAttachments ? "" : "内 / 備 / 注なし");
     return `<tr>
       <td class="col-mini"><input type="checkbox" class="done-check" data-id="${t.id}"></td>
       <td class="col-mini badge-cell ${t.type}"><span class="badge ${t.type}">${t.type === "work" ? "W" : "P"}</span></td>
@@ -1027,7 +1060,7 @@ function render() {
   renderCalendar(tasks);
   els.activeListView.classList.toggle("is-hidden", state.view !== "list");
   els.calendarView.classList.toggle("is-hidden", state.view !== "calendar");
-  els.toggleView.textContent = state.view === "list" ? "カレンダーで表示" : "リストで表示";
+  els.toggleView.textContent = state.view === "list" ? "カレンダー" : "リストで表示";
   scheduleTrashCleanup();
   updateAttachmentLinks();
 }
@@ -1128,6 +1161,18 @@ function linkifyText(value) {
 
   result += escapeHtml(text.slice(lastIndex));
   return result;
+}
+
+function renderNoteLines(value) {
+  const text = value || "";
+  if (!text) return "";
+  const lines = text.split(/\r?\n/);
+  const items = lines.map((line) => {
+    if (!line.trim()) return "";
+    const html = linkifyText(line);
+    return `<label class="note-line"><input type="checkbox" class="note-check"><span class="note-line-text">${html}</span></label>`;
+  }).filter(Boolean);
+  return items.join("");
 }
 
 function truncateText(value, maxLength) {
@@ -1376,6 +1421,11 @@ els.sortButtons.forEach((btn) => {
 
 els.toggleView.addEventListener("click", () => {
   state.view = state.view === "list" ? "calendar" : "list";
+  render();
+});
+
+els.activeProjectFilter?.addEventListener("change", (e) => {
+  state.activeProjectFilter = e.target.value || "all";
   render();
 });
 
