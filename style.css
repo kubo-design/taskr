@@ -171,6 +171,9 @@ textarea{
   .inline-switch .type-btn{
     height:calc(var(--field-h) * 1.2);
   }
+  .new-form .type-btn{
+    font-size:1.5rem;
+  }
   .list-header{
     grid-template-columns: 1fr auto !important;
     grid-template-areas:
@@ -471,7 +474,29 @@ textarea{
 }
 .field.wide{grid-column: span 1;}
 
-.label{font-size:0.75rem; color:var(--muted)}
+.label{
+  font-size:0.75rem;
+  color:#111;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.label::before{
+  content:"";
+  width:8px;
+  height:8px;
+  background:var(--work);
+  display:inline-block;
+  flex:0 0 auto;
+}
+.label.small{
+  color:var(--muted);
+  font-weight:400;
+}
+.label.small::before{
+  content:none;
+}
 .label.small{font-size:0.6875rem;}
 .label-row{
   display:flex;
@@ -1308,3 +1333,18 @@ textarea{
 }
 
 .is-hidden{display:none;}
+.preview-label{
+  color:#111;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.preview-label::before{
+  content:"";
+  width:8px;
+  height:8px;
+  background:var(--work);
+  display:inline-block;
+  flex:0 0 auto;
+}
