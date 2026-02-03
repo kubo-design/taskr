@@ -474,6 +474,11 @@ textarea{
   padding:4px 8px;
   font-size:0.6875rem;
 }
+.label-row .btn.small.note-undo{
+  background:#e5e5e5;
+  color:#111;
+  border:1px solid #111;
+}
 .date-row .label{
   cursor:pointer;
   white-space:nowrap;

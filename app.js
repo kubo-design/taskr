@@ -20,6 +20,7 @@ const els = {
   noteInput: $("#noteInput"),
   noteAttachments: $("#noteAttachments"),
   noteAddCheckbox: $("#noteAddCheckbox"),
+  noteUndo: $("#noteUndo"),
   dueRow: document.querySelector(".date-row"),
   dueInput: $("#dueInput"),
   dueTimeRow: $("#dueTimeRow"),
@@ -56,6 +57,7 @@ const els = {
   editTodo: $("#editTodo"),
   editNote: $("#editNote"),
   editNoteAddCheckbox: $("#editNoteAddCheckbox"),
+  editNoteUndo: $("#editNoteUndo"),
   editAttachments: $("#editAttachments"),
   editAttachmentsList: $("#editAttachmentsList"),
   editDue: $("#editDue"),
@@ -1353,6 +1355,32 @@ setupTimeToggle({
   input.addEventListener("input", () => autoGrowTextArea(input));
 });
 
+function createUndoController(textarea, button) {
+  if (!textarea || !button) return null;
+  const stack = [textarea.value || ""];
+  const pushState = () => {
+    const value = textarea.value || "";
+    const last = stack[stack.length - 1];
+    if (value === last) return;
+    stack.push(value);
+    if (stack.length > 50) stack.shift();
+  };
+  textarea.addEventListener("input", pushState);
+  button.addEventListener("click", () => {
+    if (stack.length <= 1) return;
+    stack.pop();
+    const prev = stack[stack.length - 1] ?? "";
+    textarea.value = prev;
+    textarea.focus();
+    textarea.selectionStart = textarea.selectionEnd = prev.length;
+    autoGrowTextArea(textarea);
+  });
+  return { stack, pushState };
+}
+
+const noteUndo = createUndoController(els.noteInput, els.noteUndo);
+const editNoteUndo = createUndoController(els.editNote, els.editNoteUndo);
+
 function applyNoteCheckboxes(text, start, end) {
   const lines = text.split(/\r?\n/);
   const lineStarts = [];
@@ -1400,8 +1428,14 @@ const handleNoteAddCheckbox = (textarea) => {
   autoGrowTextArea(textarea);
 };
 
-els.noteAddCheckbox?.addEventListener("click", () => handleNoteAddCheckbox(els.noteInput));
-els.editNoteAddCheckbox?.addEventListener("click", () => handleNoteAddCheckbox(els.editNote));
+els.noteAddCheckbox?.addEventListener("click", () => {
+  handleNoteAddCheckbox(els.noteInput);
+  noteUndo?.pushState();
+});
+els.editNoteAddCheckbox?.addEventListener("click", () => {
+  handleNoteAddCheckbox(els.editNote);
+  editNoteUndo?.pushState();
+});
 
 els.form.addEventListener("submit", async (e) => {
   e.preventDefault();

@@ -15,7 +15,7 @@
   <main class="container">
     <section class="block storage-block">
       <img class="app-logo" src="SVG/taskr_logo.svg" alt="TASKR" />
-      <div class="app-version">ver.1.0.4</div>
+      <div class="app-version">ver.1.0.5</div>
     </section>
 
     <section class="block new-block">
@@ -52,8 +52,9 @@
 
           <div class="field wide">
             <div class="label-row">
-              <label class="label">内容 / 備考 / 注意事項</label>
+              <label class="label">内容 / 備考</label>
               <button id="noteAddCheckbox" class="btn small" type="button">チェックボックス追加</button>
+              <button id="noteUndo" class="btn small note-undo" type="button">↩︎</button>
             </div>
             <textarea id="noteInput" class="textarea" rows="4" placeholder="記入欄"></textarea>
             <input id="noteAttachments" class="input file-input" type="file" multiple
@@ -228,8 +229,9 @@
         </div>
         <div class="field">
           <div class="label-row">
-            <label class="label">内容 / 備考 / 注意事項</label>
+            <label class="label">内容 / 備考</label>
             <button id="editNoteAddCheckbox" class="btn small" type="button">チェックボックス追加</button>
+            <button id="editNoteUndo" class="btn small note-undo" type="button">↩︎</button>
           </div>
           <textarea id="editNote" class="textarea" rows="3"></textarea>
           <ul id="editAttachmentsList" class="attachment-list"></ul>
@@ -277,7 +279,7 @@
         <div class="preview-row"><span class="preview-label">種別</span><span id="previewType"></span></div>
         <div class="preview-row"><span class="preview-label">案件名</span><span id="previewProject"></span></div>
         <div class="preview-row"><span class="preview-label">やること</span><span id="previewTodo"></span></div>
-        <div class="preview-row"><span class="preview-label">内容 / 備考 / 注意事項</span><span id="previewNote"></span></div>
+        <div class="preview-row"><span class="preview-label">内容 / 備考</span><span id="previewNote"></span></div>
         <div class="preview-row"><span class="preview-label">期日</span><span id="previewDue"></span></div>
         <div class="preview-row preview-attachments is-hidden">
           <span class="preview-label">添付</span>
