@@ -21,6 +21,9 @@ const els = {
   noteAttachments: $("#noteAttachments"),
   dueRow: document.querySelector(".date-row"),
   dueInput: $("#dueInput"),
+  dueTimeRow: $("#dueTimeRow"),
+  dueTimeInput: $("#dueTimeInput"),
+  dueTimeToggle: $("#dueTimeToggle"),
   projectHistory: $("#projectHistory"),
   projectTrash: $("#projectTrash"),
   todoHistory: $("#todoHistory"),
@@ -53,7 +56,10 @@ const els = {
   editAttachments: $("#editAttachments"),
   editAttachmentsList: $("#editAttachmentsList"),
   editDue: $("#editDue"),
-  editDueRow: $("#editDue")?.closest(".field"),
+  editDueRow: $("#editDue")?.closest(".date-row"),
+  editDueTimeRow: $("#editDueTimeRow"),
+  editDueTime: $("#editDueTime"),
+  editDueTimeToggle: $("#editDueTimeToggle"),
   editCancel: $("#editCancel"),
   previewDialog: $("#previewDialog"),
   previewType: $("#previewType"),
@@ -463,9 +469,10 @@ function scheduleTrashCleanup() {
   }, delay);
 }
 
-function dateFromInput(value) {
+function dateFromInput(value, timeValue = "") {
   if (!value) return null;
-  return new Date(`${value}T00:00:00`);
+  const time = timeValue ? `${timeValue}:00` : "00:00:00";
+  return new Date(`${value}T${time}`);
 }
 
 function toLocalDateKey(date) {
@@ -570,20 +577,25 @@ function riskLabel(dueDate) {
   return { text: `${Math.abs(days)}日前`, className: "risk-past" };
 }
 
-function formatDate(dueDate) {
+function formatDate(dueDate, dueTime = "") {
   if (!dueDate) return "未定";
-  const date = dateFromInput(dueDate);
-  return new Intl.DateTimeFormat("ja-JP", {
+  const date = dateFromInput(dueDate, dueTime);
+  const options = {
     year: "2-digit",
     month: "2-digit",
     day: "2-digit",
     weekday: "short"
-  }).format(date);
+  };
+  if (dueTime) {
+    options.hour = "2-digit";
+    options.minute = "2-digit";
+  }
+  return new Intl.DateTimeFormat("ja-JP", options).format(date);
 }
 
-function remindText(dueDate) {
+function remindText(dueDate, dueTime = "") {
   if (!dueDate) return "-";
-  const target = dateFromInput(dueDate);
+  const target = dateFromInput(dueDate, dueTime);
   const diff = Math.max(0, target.getTime() - Date.now());
   const days = Math.floor(diff / 86400000);
   const hours = Math.floor((diff % 86400000) / 3600000);
@@ -594,8 +606,12 @@ function remindText(dueDate) {
 function sortByDue(a, b) {
   const aDue = a.dueDate || "9999-12-31";
   const bDue = b.dueDate || "9999-12-31";
-  if (aDue === bDue) return a.createdAt - b.createdAt;
-  return aDue.localeCompare(bDue);
+  const aTime = a.dueTime ? `T${a.dueTime}` : "T24:00";
+  const bTime = b.dueTime ? `T${b.dueTime}` : "T24:00";
+  const aKey = `${aDue}${aTime}`;
+  const bKey = `${bDue}${bTime}`;
+  if (aKey === bKey) return a.createdAt - b.createdAt;
+  return aKey.localeCompare(bKey);
 }
 
 function sortByProject(a, b) {
@@ -700,7 +716,7 @@ function renderActiveList(tasks) {
       <td class="note-cell ${noteClass}"><div class="note-text">${noteText}</div>${attachments}</td>
       <td class="col-due">
         <div class="due-stack">
-          <div class="due-date">${formatDate(t.dueDate)}</div>
+          <div class="due-date">${formatDate(t.dueDate, t.dueTime)}</div>
           <div class="action-row">
             <button class="btn is-minus" data-action="reschedule" data-days="-1" data-id="${t.id}">-1</button>
             <button class="btn" data-action="reschedule" data-days="1" data-id="${t.id}">+1</button>
@@ -746,7 +762,7 @@ function renderDoneList(tasks) {
       <td><span class="project-name ${t.type}">${escapeHtml(t.project)}</span></td>
       <td><span class="todo-text">${escapeHtml(t.todo)}</span></td>
       <td class="note-cell ${noteClass}"><div class="note-text">${noteText}</div>${attachments}</td>
-      <td class="col-due">${formatDate(t.dueDate)}</td>
+      <td class="col-due">${formatDate(t.dueDate, t.dueTime)}</td>
       <td class="col-actions">
         <div class="action-row">
           <button class="btn" data-action="restore" data-id="${t.id}">戻す</button>
@@ -1007,7 +1023,7 @@ function updateFilterButtons() {
 function rescheduleTask(tasks, id, days) {
   const task = tasks.find((t) => t.id === id);
   if (!task) return tasks;
-  const base = task.dueDate ? dateFromInput(task.dueDate) : new Date();
+  const base = task.dueDate ? dateFromInput(task.dueDate, task.dueTime) : new Date();
   const target = new Date(base.getFullYear(), base.getMonth(), base.getDate());
   target.setDate(target.getDate() + days);
   task.dueDate = toLocalDateKey(target);
@@ -1039,6 +1055,7 @@ els.todoSelect.addEventListener("change", (e) => {
 function bindDateRow(row, input) {
   if (!row || !input) return;
   row.addEventListener("click", (e) => {
+    if (e.target.closest("button")) return;
     input.focus();
     if (typeof input.showPicker === "function") {
       input.showPicker();
@@ -1048,6 +1065,65 @@ function bindDateRow(row, input) {
 
 bindDateRow(els.dueRow, els.dueInput);
 bindDateRow(els.editDueRow, els.editDue);
+
+function setupTimeToggle({ dateInput, timeRow, timeInput, toggleButton }) {
+  if (!dateInput || !timeRow || !timeInput || !toggleButton) return;
+
+  const updateLabel = () => {
+    toggleButton.textContent = timeRow.classList.contains("is-hidden")
+      ? "時間を指定"
+      : "時間を削除";
+  };
+
+  const hideTime = () => {
+    timeRow.classList.add("is-hidden");
+    timeInput.value = "";
+    updateLabel();
+  };
+
+  toggleButton.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (timeRow.classList.contains("is-hidden")) {
+      if (!dateInput.value) {
+        dateInput.focus();
+        if (typeof dateInput.showPicker === "function") {
+          dateInput.showPicker();
+        }
+        return;
+      }
+      timeRow.classList.remove("is-hidden");
+      if (!timeInput.value) timeInput.value = "09:00";
+      timeInput.focus();
+      if (typeof timeInput.showPicker === "function") {
+        timeInput.showPicker();
+      }
+      updateLabel();
+      return;
+    }
+    hideTime();
+  });
+
+  dateInput.addEventListener("change", () => {
+    if (!dateInput.value) hideTime();
+  });
+
+  updateLabel();
+}
+
+setupTimeToggle({
+  dateInput: els.dueInput,
+  timeRow: els.dueTimeRow,
+  timeInput: els.dueTimeInput,
+  toggleButton: els.dueTimeToggle
+});
+
+setupTimeToggle({
+  dateInput: els.editDue,
+  timeRow: els.editDueTimeRow,
+  timeInput: els.editDueTime,
+  toggleButton: els.editDueTimeToggle
+});
 
 [els.projectInput, els.todoInput, els.editProject, els.editTodo].forEach((input) => {
   if (!input) return;
@@ -1075,6 +1151,7 @@ els.form.addEventListener("submit", async (e) => {
     todo: els.todoInput.value.trim(),
     note: els.noteInput.value.trim(),
     dueDate: els.dueInput.value || "",
+    dueTime: els.dueInput.value ? (els.dueTimeInput.value || "") : "",
     done: false,
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -1099,6 +1176,9 @@ els.form.addEventListener("submit", async (e) => {
 
   els.form.reset();
   if (els.noteAttachments) els.noteAttachments.value = "";
+  if (els.dueTimeInput) els.dueTimeInput.value = "";
+  if (els.dueTimeRow) els.dueTimeRow.classList.add("is-hidden");
+  if (els.dueTimeToggle) els.dueTimeToggle.textContent = "時間を指定";
   autoGrowTextArea(els.projectInput);
   autoGrowTextArea(els.todoInput);
   render();
@@ -1468,6 +1548,13 @@ function openEditDialog(task) {
   els.editTodo.value = task.todo;
   els.editNote.value = task.note || "";
   els.editDue.value = task.dueDate || "";
+  if (els.editDueTime) els.editDueTime.value = task.dueTime || "";
+  if (els.editDueTimeRow) {
+    els.editDueTimeRow.classList.toggle("is-hidden", !task.dueTime);
+  }
+  if (els.editDueTimeToggle) {
+    els.editDueTimeToggle.textContent = task.dueTime ? "時間を削除" : "時間を指定";
+  }
   els.editForm.editType.value = task.type;
   editAttachmentState.list = (task.attachments || []).map((item) => ({ ...item }));
   editAttachmentState.removed = new Set();
@@ -1519,7 +1606,7 @@ function openPreviewDialog(task) {
   els.previewProject.textContent = task.project || "";
   els.previewTodo.textContent = task.todo || "";
   els.previewNote.textContent = task.note || "内 / 備 / 注なし";
-  els.previewDue.textContent = task.dueDate ? formatDate(task.dueDate) : "未定";
+  els.previewDue.textContent = task.dueDate ? formatDate(task.dueDate, task.dueTime) : "未定";
   if (task.attachments && task.attachments.length) {
     els.previewAttachments.innerHTML = renderAttachmentList(task.attachments);
     if (els.previewAttachmentsRow) els.previewAttachmentsRow.classList.remove("is-hidden");
@@ -1549,6 +1636,7 @@ els.editForm.addEventListener("submit", async (e) => {
   task.todo = els.editTodo.value.trim();
   task.note = els.editNote.value.trim();
   task.dueDate = els.editDue.value || "";
+  task.dueTime = task.dueDate ? (els.editDueTime.value || "") : "";
   task.updatedAt = Date.now();
   task.attachments = editAttachmentState.list.slice();
   if (newFiles.length) {

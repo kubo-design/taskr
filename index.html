@@ -57,6 +57,11 @@
             <div class="date-row">
               <label class="label small" for="dueInput">日付</label>
               <input id="dueInput" class="input" type="date" />
+              <button id="dueTimeToggle" class="btn time-toggle" type="button">時間を指定</button>
+            </div>
+            <div id="dueTimeRow" class="time-row is-hidden">
+              <label class="label small" for="dueTimeInput">時間</label>
+              <input id="dueTimeInput" class="input" type="time" step="300" />
             </div>
             <div class="field submit">
               <button class="btn-primary" type="submit">登録</button>
@@ -214,7 +219,15 @@
         </div>
         <div class="field">
           <label class="label">期日</label>
-          <input id="editDue" class="input" type="date" />
+          <div class="date-row">
+            <label class="label small" for="editDue">日付</label>
+            <input id="editDue" class="input" type="date" />
+            <button id="editDueTimeToggle" class="btn time-toggle" type="button">時間を指定</button>
+          </div>
+          <div id="editDueTimeRow" class="time-row is-hidden">
+            <label class="label small" for="editDueTime">時間</label>
+            <input id="editDueTime" class="input" type="time" step="300" />
+          </div>
         </div>
       </div>
       <div class="dialog-actions">

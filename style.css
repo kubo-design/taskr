@@ -528,6 +528,15 @@ textarea{
   gap:8px;
   cursor:pointer;
 }
+.time-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:6px;
+}
+.time-toggle{
+  white-space:nowrap;
+}
 
 .field.submit{
   display:flex;
