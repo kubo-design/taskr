@@ -306,7 +306,10 @@ textarea{
   }
   #activeListView .action-grid{
     display:grid;
-    grid-template-columns: 1fr 1fr 2fr;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "edit duplicate"
+      "share complete";
     align-items:center;
     gap:8px;
   }
@@ -320,6 +323,10 @@ textarea{
     height:auto;
     padding:10px 10px;
   }
+  #activeListView .action-grid .btn[data-action="edit"]{grid-area:edit;}
+  #activeListView .action-grid .btn[data-action="duplicate"]{grid-area:duplicate;}
+  #activeListView .action-grid .btn[data-action="share"]{grid-area:share;}
+  #activeListView .action-grid .btn[data-action="complete"]{grid-area:complete;}
   #activeListView .action-row .btn[data-action="reschedule"]{
     padding:7px 10px;
   }
