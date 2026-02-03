@@ -219,6 +219,12 @@ textarea{
     line-height:1.2;
     white-space:nowrap;
   }
+  .label-row .btn.small.note-add{
+    font-size:1.03125rem;
+  }
+  .label-row .btn.small.note-undo{
+    margin-left:auto;
+  }
   .table-wrap{
     overflow:visible;
   }
