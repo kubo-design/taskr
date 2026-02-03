@@ -306,10 +306,8 @@ textarea{
   }
   #activeListView .action-grid{
     display:grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      "edit duplicate"
-      "share complete";
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-areas: "edit duplicate share complete";
     align-items:center;
     gap:8px;
   }
@@ -588,6 +586,7 @@ textarea{
 .btn{
   border:1px solid var(--line);
   background:#fff;
+  color:var(--text);
   padding:6px 10px;
   cursor:pointer;
   border-radius:5px;
@@ -1181,6 +1180,8 @@ textarea{
   padding:0;
   width:min(560px, 92vw);
   --field-h:36px;
+  background:#fff;
+  color:var(--text);
 }
 .dialog-inner{padding:16px;}
 .dialog-grid{display:grid; gap:10px;}
