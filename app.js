@@ -72,7 +72,16 @@ const els = {
   previewClose: $("#previewClose"),
   previewEdit: $("#previewEdit"),
   previewDuplicate: $("#previewDuplicate"),
-  previewComplete: $("#previewComplete")
+  previewComplete: $("#previewComplete"),
+  exportActiveJson: $("#exportActiveJson"),
+  importActiveJsonBtn: $("#importActiveJsonBtn"),
+  importActiveJson: $("#importActiveJson"),
+  exportDialog: $("#exportDialog"),
+  exportShareBtn: $("#exportShareBtn"),
+  exportSaveBtn: $("#exportSaveBtn"),
+  exportDownloadBtn: $("#exportDownloadBtn"),
+  exportCancelBtn: $("#exportCancelBtn"),
+  exportSupportNote: $("#exportSupportNote")
 };
 
 const state = {
@@ -401,6 +410,164 @@ function loadTasks() {
 
 function saveTasks(tasks) {
   save(STORAGE.tasks, tasks);
+}
+
+function buildActiveExportPayload() {
+  const tasks = loadTasks().filter((t) => !t.done);
+  const cleaned = tasks.map((t) => ({
+    id: t.id,
+    type: t.type === "private" ? "private" : "work",
+    project: typeof t.project === "string" ? t.project : "",
+    todo: typeof t.todo === "string" ? t.todo : "",
+    note: typeof t.note === "string" ? t.note : "",
+    dueDate: typeof t.dueDate === "string" ? t.dueDate : "",
+    dueTime: typeof t.dueTime === "string" ? t.dueTime : "",
+    createdAt: Number.isFinite(t.createdAt) ? t.createdAt : Date.now(),
+    updatedAt: Number.isFinite(t.updatedAt) ? t.updatedAt : Date.now()
+  }));
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    note: "attachments_not_included",
+    tasks: cleaned
+  };
+}
+
+function buildSingleTaskPayload(task) {
+  const cleaned = {
+    id: task.id,
+    type: task.type === "private" ? "private" : "work",
+    project: typeof task.project === "string" ? task.project : "",
+    todo: typeof task.todo === "string" ? task.todo : "",
+    note: typeof task.note === "string" ? task.note : "",
+    dueDate: typeof task.dueDate === "string" ? task.dueDate : "",
+    dueTime: typeof task.dueTime === "string" ? task.dueTime : "",
+    createdAt: Number.isFinite(task.createdAt) ? task.createdAt : Date.now(),
+    updatedAt: Number.isFinite(task.updatedAt) ? task.updatedAt : Date.now()
+  };
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    note: "attachments_not_included",
+    tasks: [cleaned]
+  };
+}
+
+function createExportFile(payload, filename) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const file = new File([blob], filename, { type: "application/json" });
+  return { blob, file };
+}
+
+function getExportCapabilities(file) {
+  const canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+  const canSave = !!(window.showSaveFilePicker && window.isSecureContext);
+  return { canShare, canSave };
+}
+
+async function shareJsonFile(file) {
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: "TASKR Active Tasks"
+      });
+      return;
+    } catch (err) {
+      if (err && err.name === "AbortError") return;
+    }
+  }
+  alert("共有に対応していない環境です。");
+}
+
+async function saveJsonFile(blob, filename) {
+  if (window.showSaveFilePicker && window.isSecureContext) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{
+          description: "JSON",
+          accept: { "application/json": [".json"] }
+        }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    } catch (err) {
+      if (err && err.name === "AbortError") return;
+    }
+  }
+  alert("保存先の選択に対応していない環境です。");
+}
+
+function downloadJsonFile(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function extractImportedTasks(data) {
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.tasks)) return data.tasks;
+  return null;
+}
+
+function sanitizeImportedTask(raw, existingIds) {
+  if (!raw || typeof raw !== "object") return null;
+  const now = Date.now();
+  let id = typeof raw.id === "string" && raw.id.trim() ? raw.id : uid();
+  if (existingIds.has(id)) id = uid();
+
+  return {
+    id,
+    type: raw.type === "private" ? "private" : "work",
+    project: typeof raw.project === "string" ? raw.project : "",
+    todo: typeof raw.todo === "string" ? raw.todo : "",
+    note: typeof raw.note === "string" ? raw.note : "",
+    dueDate: typeof raw.dueDate === "string" ? raw.dueDate : "",
+    dueTime: typeof raw.dueTime === "string" ? raw.dueTime : "",
+    createdAt: Number.isFinite(raw.createdAt) ? raw.createdAt : now,
+    updatedAt: Number.isFinite(raw.updatedAt) ? raw.updatedAt : now,
+    done: false,
+    completedAt: null,
+    attachments: []
+  };
+}
+
+async function importActiveTasksFromFile(file) {
+  const text = await file.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    alert("JSONの読み込みに失敗しました。");
+    return;
+  }
+
+  const list = extractImportedTasks(data);
+  if (!list || list.length === 0) {
+    alert("読み込める案件がありません。");
+    return;
+  }
+
+  const existing = loadTasks();
+  const existingIds = new Set(existing.map((t) => t.id));
+  const incoming = list.map((t) => sanitizeImportedTask(t, existingIds)).filter(Boolean);
+
+  if (incoming.length === 0) {
+    alert("読み込める案件がありません。");
+    return;
+  }
+
+  saveTasks(existing.concat(incoming));
+  render();
+  alert(`案件を${incoming.length}件読み込みました。添付ファイルは引き継がれません。`);
 }
 
 function loadHistory(key) {
@@ -732,6 +899,7 @@ function renderActiveList(tasks) {
             <button class="btn is-duplicate" data-action="duplicate" data-id="${t.id}">複製</button>
           </div>
           <div class="action-row bottom">
+            <button class="btn" data-action="share" data-id="${t.id}">共有</button>
             <button class="btn dark" data-action="complete" data-id="${t.id}">完了</button>
           </div>
         </div>
@@ -1211,6 +1379,69 @@ els.toggleView.addEventListener("click", () => {
   render();
 });
 
+if (els.exportActiveJson) {
+  let exportPayload = null;
+  let exportFilename = "";
+  let exportBlob = null;
+  let exportFile = null;
+
+  const openExportDialog = () => {
+    if (!els.exportDialog) return;
+    if (els.exportSupportNote) {
+      const note = window.isSecureContext
+        ? "共有・保存先選択・ダウンロードから選べます。"
+        : "file:// で開いている場合は保存先選択が使えないことがあります。";
+      els.exportSupportNote.textContent = note;
+    }
+    if (els.exportShareBtn) els.exportShareBtn.classList.toggle("is-hidden", !exportFile || !getExportCapabilities(exportFile).canShare);
+    if (els.exportSaveBtn) els.exportSaveBtn.classList.toggle("is-hidden", !exportFile || !getExportCapabilities(exportFile).canSave);
+    if (els.exportDownloadBtn) els.exportDownloadBtn.classList.remove("is-hidden");
+    els.exportDialog.showModal();
+  };
+
+  els.exportActiveJson.addEventListener("click", () => {
+    exportPayload = buildActiveExportPayload();
+    const dateKey = new Date().toISOString().slice(0, 10);
+    exportFilename = `taskr-active-${dateKey}.json`;
+    const created = createExportFile(exportPayload, exportFilename);
+    exportBlob = created.blob;
+    exportFile = created.file;
+    openExportDialog();
+  });
+
+  if (els.exportShareBtn) {
+    els.exportShareBtn.addEventListener("click", async () => {
+      if (!exportFile) return;
+      await shareJsonFile(exportFile);
+    });
+  }
+  if (els.exportSaveBtn) {
+    els.exportSaveBtn.addEventListener("click", async () => {
+      if (!exportBlob) return;
+      await saveJsonFile(exportBlob, exportFilename);
+    });
+  }
+  if (els.exportDownloadBtn) {
+    els.exportDownloadBtn.addEventListener("click", () => {
+      if (!exportBlob) return;
+      downloadJsonFile(exportBlob, exportFilename);
+    });
+  }
+}
+
+if (els.importActiveJsonBtn && els.importActiveJson) {
+  els.importActiveJsonBtn.addEventListener("click", () => {
+    els.importActiveJson.click();
+  });
+
+  els.importActiveJson.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    await importActiveTasksFromFile(file);
+    e.target.value = "";
+  });
+}
+
 els.prevMonth.addEventListener("click", () => {
   state.calendarMonth -= 1;
   if (state.calendarMonth < 0) {
@@ -1292,6 +1523,18 @@ els.activeList.addEventListener("click", async (e) => {
         attachments
       });
     }
+  }
+
+  if (action === "share") {
+    const task = tasks.find((t) => t.id === id);
+    if (task) {
+      const payload = buildSingleTaskPayload(task);
+      const dateKey = new Date().toISOString().slice(0, 10);
+      const filename = `taskr-task-${dateKey}.json`;
+      const { file } = createExportFile(payload, filename);
+      await shareJsonFile(file);
+    }
+    return;
   }
 
   if (action === "edit") {

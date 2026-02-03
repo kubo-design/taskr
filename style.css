@@ -806,6 +806,8 @@ textarea{
 .list-actions{display:flex; gap:36px; justify-content:flex-end;}
 .sorts{display:flex; gap:6px;}
 .btn-line{display:inline;}
+.data-actions{display:flex; gap:6px; align-items:center;}
+.data-actions-bottom{margin-top:10px; justify-content:flex-end;}
 
 @media (min-width: 801px){
   .block{
@@ -1180,6 +1182,12 @@ textarea{
   justify-content:flex-end;
   gap:10px;
   margin-top:20px;
+}
+.export-actions{
+  flex-wrap:wrap;
+}
+.export-note{
+  margin-top:6px;
 }
 .dialog-actions #editCancel{
   flex:0 0 auto;

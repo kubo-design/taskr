@@ -139,6 +139,11 @@
               <tbody id="activeList"></tbody>
             </table>
           </div>
+          <div class="data-actions data-actions-bottom">
+            <button id="exportActiveJson" class="btn" type="button">書き出し</button>
+            <button id="importActiveJsonBtn" class="btn" type="button">読み込み</button>
+            <input id="importActiveJson" class="input file-input is-hidden" type="file" accept="application/json,.json" />
+          </div>
 
           <div id="calendarView" class="calendar is-hidden">
             <div class="calendar-head">
@@ -238,6 +243,19 @@
       <div class="dialog-actions">
         <button id="editCancel" class="btn" type="button">キャンセル</button>
         <button class="btn-primary" type="submit">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="exportDialog" class="dialog">
+    <form class="dialog-inner" method="dialog">
+      <h3>書き出し</h3>
+      <p id="exportSupportNote" class="help-text export-note"></p>
+      <div class="dialog-actions export-actions">
+        <button id="exportShareBtn" class="btn-primary" type="button">共有</button>
+        <button id="exportSaveBtn" class="btn" type="button">保存</button>
+        <button id="exportDownloadBtn" class="btn" type="button">ダウンロード</button>
+        <button id="exportCancelBtn" class="btn" type="submit">閉じる</button>
       </div>
     </form>
   </dialog>
