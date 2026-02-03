@@ -451,6 +451,12 @@ textarea{
 .label.small{font-size:0.6875rem;}
 .date-row .label{
   cursor:pointer;
+  white-space:nowrap;
+  flex:0 0 auto;
+}
+.date-row .input{
+  flex:1;
+  min-width:0;
 }
 
 .input,.select,.textarea{
@@ -533,6 +539,14 @@ textarea{
   align-items:center;
   gap:8px;
   margin-top:6px;
+}
+.time-row .label{
+  white-space:nowrap;
+  flex:0 0 auto;
+}
+.time-row .input{
+  flex:1;
+  min-width:0;
 }
 .time-toggle{
   white-space:nowrap;
