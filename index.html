@@ -15,7 +15,7 @@
   <main class="container">
     <section class="block storage-block">
       <img class="app-logo" src="SVG/taskr_logo.svg" alt="TASKR" />
-      <div class="app-version">ver.1.0.7</div>
+      <div class="app-version">ver.1.0.8</div>
     </section>
 
     <section class="block new-block">
@@ -54,7 +54,6 @@
             <div class="label-row">
               <label class="label">内容 / 備考</label>
               <button id="noteAddCheckbox" class="btn small note-add" type="button">チェックボックス追加</button>
-              <button id="noteUndo" class="btn small note-undo" type="button">↩︎</button>
             </div>
             <textarea id="noteInput" class="textarea" rows="4" placeholder="記入欄"></textarea>
             <input id="noteAttachments" class="input file-input" type="file" multiple
@@ -66,7 +65,10 @@
             <label class="label">期日</label>
             <div class="date-row">
               <label class="label small" for="dueInput">日付</label>
-              <input id="dueInput" class="input" type="date" />
+              <div class="date-input-wrap">
+                <input id="dueInput" class="input" type="date" />
+                <span class="date-placeholder">年 / 月 / 日</span>
+              </div>
               <button id="dueTimeToggle" class="btn time-toggle" type="button">時間を指定</button>
             </div>
             <div id="dueTimeRow" class="time-row is-hidden">
@@ -74,7 +76,10 @@
               <input id="dueTimeInput" class="input" type="time" step="300" />
             </div>
             <div class="field submit">
-              <button class="btn-primary" type="submit">登録</button>
+              <div class="submit-actions">
+                <button id="clearNewForm" class="btn btn-clear" type="button">クリア</button>
+                <button class="btn-primary" type="submit">登録</button>
+              </div>
             </div>
           </div>
             </div>
@@ -231,7 +236,6 @@
           <div class="label-row">
             <label class="label">内容 / 備考</label>
             <button id="editNoteAddCheckbox" class="btn small note-add" type="button">チェックボックス追加</button>
-            <button id="editNoteUndo" class="btn small note-undo" type="button">↩︎</button>
           </div>
           <textarea id="editNote" class="textarea" rows="3"></textarea>
           <ul id="editAttachmentsList" class="attachment-list"></ul>
@@ -297,6 +301,7 @@
     </div>
   </dialog>
 
+  <button id="globalUndo" class="btn floating-undo" type="button" aria-label="ひとつ戻す">↩︎</button>
   <script src="app.js"></script>
 </body>
 </html>

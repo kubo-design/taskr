@@ -20,7 +20,7 @@ const els = {
   noteInput: $("#noteInput"),
   noteAttachments: $("#noteAttachments"),
   noteAddCheckbox: $("#noteAddCheckbox"),
-  noteUndo: $("#noteUndo"),
+  globalUndo: $("#globalUndo"),
   dueRow: document.querySelector(".date-row"),
   dueInput: $("#dueInput"),
   dueTimeRow: $("#dueTimeRow"),
@@ -57,7 +57,6 @@ const els = {
   editTodo: $("#editTodo"),
   editNote: $("#editNote"),
   editNoteAddCheckbox: $("#editNoteAddCheckbox"),
-  editNoteUndo: $("#editNoteUndo"),
   editAttachments: $("#editAttachments"),
   editAttachmentsList: $("#editAttachmentsList"),
   editDue: $("#editDue"),
@@ -78,6 +77,7 @@ const els = {
   previewEdit: $("#previewEdit"),
   previewDuplicate: $("#previewDuplicate"),
   previewComplete: $("#previewComplete"),
+  clearNewForm: $("#clearNewForm"),
   exportActiveJson: $("#exportActiveJson"),
   importActiveJsonBtn: $("#importActiveJsonBtn"),
   importActiveJson: $("#importActiveJson"),
@@ -1292,6 +1292,22 @@ function bindDateRow(row, input) {
 bindDateRow(els.dueRow, els.dueInput);
 bindDateRow(els.editDueRow, els.editDue);
 
+const setupDatePlaceholder = (row, input) => {
+  if (!row || !input) return null;
+  const wrap = row.querySelector(".date-input-wrap");
+  if (!wrap) return null;
+  const update = () => {
+    wrap.classList.toggle("is-empty", !input.value);
+  };
+  update();
+  input.addEventListener("input", update);
+  input.addEventListener("change", update);
+  input.addEventListener("blur", update);
+  return update;
+};
+
+const updateNewDatePlaceholder = setupDatePlaceholder(els.dueRow, els.dueInput);
+
 function setupTimeToggle({ dateInput, timeRow, timeInput, toggleButton }) {
   if (!dateInput || !timeRow || !timeInput || !toggleButton) return;
 
@@ -1357,31 +1373,113 @@ setupTimeToggle({
   input.addEventListener("input", () => autoGrowTextArea(input));
 });
 
-function createUndoController(textarea, button) {
-  if (!textarea || !button) return null;
-  const stack = [textarea.value || ""];
+const undoControllers = new Map();
+let lastUndoTarget = null;
+const globalUndoHome = els.globalUndo?.parentElement || document.body;
+
+const moveGlobalUndo = (target) => {
+  if (!els.globalUndo || !target) return;
+  if (els.globalUndo.parentElement === target) return;
+  target.appendChild(els.globalUndo);
+};
+
+function createInputUndo(input) {
+  if (!input) return null;
+  const stack = [input.value || ""];
   const pushState = () => {
-    const value = textarea.value || "";
+    const value = input.value || "";
     const last = stack[stack.length - 1];
     if (value === last) return;
     stack.push(value);
     if (stack.length > 50) stack.shift();
   };
-  textarea.addEventListener("input", pushState);
-  button.addEventListener("click", () => {
+  const undo = () => {
     if (stack.length <= 1) return;
     stack.pop();
     const prev = stack[stack.length - 1] ?? "";
-    textarea.value = prev;
-    textarea.focus();
-    textarea.selectionStart = textarea.selectionEnd = prev.length;
-    autoGrowTextArea(textarea);
+    input.value = prev;
+    if (typeof input.setSelectionRange === "function") {
+      input.setSelectionRange(prev.length, prev.length);
+    }
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.focus();
+    autoGrowTextArea(input);
+  };
+  input.addEventListener("input", pushState);
+  input.addEventListener("focus", () => {
+    lastUndoTarget = input;
   });
-  return { stack, pushState };
+  input.addEventListener("click", () => {
+    lastUndoTarget = input;
+  });
+  return { stack, pushState, undo };
 }
 
-const noteUndo = createUndoController(els.noteInput, els.noteUndo);
-const editNoteUndo = createUndoController(els.editNote, els.editNoteUndo);
+const registerUndoInput = (input) => {
+  const controller = createInputUndo(input);
+  if (controller) undoControllers.set(input, controller);
+};
+
+const resetUndoForInput = (input) => {
+  const controller = undoControllers.get(input);
+  if (!controller) return;
+  controller.stack.length = 1;
+  controller.stack[0] = input?.value || "";
+};
+
+const pushUndoState = (input) => {
+  const controller = undoControllers.get(input);
+  if (!controller) return;
+  controller.pushState();
+};
+
+[
+  els.projectInput,
+  els.todoInput,
+  els.noteInput,
+  els.dueInput,
+  els.dueTimeInput,
+  els.editProject,
+  els.editTodo,
+  els.editNote,
+  els.editDue,
+  els.editDueTime
+].forEach((input) => registerUndoInput(input));
+
+els.globalUndo?.addEventListener("click", () => {
+  if (!lastUndoTarget) return;
+  const controller = undoControllers.get(lastUndoTarget);
+  if (!controller) return;
+  controller.undo();
+});
+
+if (els.editDialog) {
+  els.editDialog.addEventListener("close", () => moveGlobalUndo(globalUndoHome));
+  els.editDialog.addEventListener("cancel", () => moveGlobalUndo(globalUndoHome));
+}
+if (els.exportDialog) {
+  els.exportDialog.addEventListener("close", () => moveGlobalUndo(globalUndoHome));
+  els.exportDialog.addEventListener("cancel", () => moveGlobalUndo(globalUndoHome));
+}
+
+const updateFloatingUndoOffset = () => {
+  if (!els.globalUndo) return;
+  const vv = window.visualViewport;
+  const base = 16;
+  if (!vv) {
+    document.documentElement.style.setProperty("--floating-undo-bottom", `${base}px`);
+    return;
+  }
+  const keyboardOffset = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
+  document.documentElement.style.setProperty("--floating-undo-bottom", `${base + keyboardOffset}px`);
+};
+
+updateFloatingUndoOffset();
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", updateFloatingUndoOffset);
+  window.visualViewport.addEventListener("scroll", updateFloatingUndoOffset);
+}
+window.addEventListener("resize", updateFloatingUndoOffset);
 
 function applyNoteCheckboxes(text, start, end) {
   const lines = text.split(/\r?\n/);
@@ -1432,12 +1530,32 @@ const handleNoteAddCheckbox = (textarea) => {
 
 els.noteAddCheckbox?.addEventListener("click", () => {
   handleNoteAddCheckbox(els.noteInput);
-  noteUndo?.pushState();
+  pushUndoState(els.noteInput);
 });
 els.editNoteAddCheckbox?.addEventListener("click", () => {
   handleNoteAddCheckbox(els.editNote);
-  editNoteUndo?.pushState();
+  pushUndoState(els.editNote);
 });
+
+const resetNewFormInputs = () => {
+  if (els.form) els.form.reset();
+  if (els.noteAttachments) els.noteAttachments.value = "";
+  if (els.dueTimeInput) els.dueTimeInput.value = "";
+  if (els.dueTimeRow) els.dueTimeRow.classList.add("is-hidden");
+  if (els.dueTimeToggle) els.dueTimeToggle.textContent = "時間を指定";
+  if (els.noteInput) {
+    els.noteInput.value = "";
+    autoGrowTextArea(els.noteInput);
+  }
+  resetUndoForInput(els.projectInput);
+  resetUndoForInput(els.todoInput);
+  resetUndoForInput(els.noteInput);
+  resetUndoForInput(els.dueInput);
+  resetUndoForInput(els.dueTimeInput);
+  autoGrowTextArea(els.projectInput);
+  autoGrowTextArea(els.todoInput);
+  if (typeof updateNewDatePlaceholder === "function") updateNewDatePlaceholder();
+};
 
 els.form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -1482,14 +1600,12 @@ els.form.addEventListener("submit", async (e) => {
   saveHistory(STORAGE.projects, addToHistory(projects, task.project));
   saveHistory(STORAGE.todos, addToHistory(todos, task.todo));
 
-  els.form.reset();
-  if (els.noteAttachments) els.noteAttachments.value = "";
-  if (els.dueTimeInput) els.dueTimeInput.value = "";
-  if (els.dueTimeRow) els.dueTimeRow.classList.add("is-hidden");
-  if (els.dueTimeToggle) els.dueTimeToggle.textContent = "時間を指定";
-  autoGrowTextArea(els.projectInput);
-  autoGrowTextArea(els.todoInput);
+  resetNewFormInputs();
   render();
+});
+
+els.clearNewForm?.addEventListener("click", () => {
+  resetNewFormInputs();
 });
 
 els.filterButtons.forEach((btn) => {
@@ -1537,12 +1653,13 @@ const setExportPayload = (payload, filename) => {
   exportFile = created.file;
 };
 
-const openExportDialog = () => {
-  if (!els.exportDialog) return;
-  if (els.exportSupportNote) {
-    const note = window.isSecureContext
-      ? "共有・保存先選択・ダウンロードから選べます。"
-      : "file:// で開いている場合は保存先選択が使えないことがあります。";
+  const openExportDialog = () => {
+    if (!els.exportDialog) return;
+    moveGlobalUndo(els.exportDialog);
+    if (els.exportSupportNote) {
+      const note = window.isSecureContext
+        ? "共有・保存先選択・ダウンロードから選べます。"
+        : "file:// で開いている場合は保存先選択が使えないことがあります。";
     els.exportSupportNote.textContent = note;
   }
   if (els.exportShareBtn) els.exportShareBtn.classList.toggle("is-hidden", !exportFile || !getExportCapabilities(exportFile).canShare);
@@ -1983,11 +2100,17 @@ function openEditDialog(task) {
   editAttachmentState.removed = new Set();
   renderEditAttachments();
   if (els.editAttachments) els.editAttachments.value = "";
+  moveGlobalUndo(els.editDialog);
   els.editDialog.showModal();
   requestAnimationFrame(() => {
     autoGrowTextArea(els.editProject);
     autoGrowTextArea(els.editTodo);
   });
+  resetUndoForInput(els.editProject);
+  resetUndoForInput(els.editTodo);
+  resetUndoForInput(els.editNote);
+  resetUndoForInput(els.editDue);
+  resetUndoForInput(els.editDueTime);
 }
 
 function renderEditAttachments() {

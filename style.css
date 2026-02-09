@@ -507,19 +507,40 @@ textarea{
   padding:4px 8px;
   font-size:0.6875rem;
 }
-.label-row .btn.small.note-undo{
-  background:#e5e5e5;
-  color:#111;
-  border:1px solid #111;
-}
 .date-row .label{
   cursor:pointer;
   white-space:nowrap;
   flex:0 0 auto;
 }
-.date-row .input{
+.date-input-wrap{
+  position:relative;
   flex:1;
   min-width:0;
+}
+.date-input-wrap .input{
+  width:100%;
+}
+.date-input-wrap.is-empty input[type="date"]{
+  color:transparent;
+  -webkit-text-fill-color:transparent;
+}
+.date-input-wrap input[type="date"]{
+  color:var(--text);
+  -webkit-text-fill-color:var(--text);
+}
+.date-placeholder{
+  position:absolute;
+  left:10px;
+  top:50%;
+  transform:translateY(-50%);
+  color:var(--muted);
+  font-size:0.875rem;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 0.15s ease;
+}
+.date-input-wrap.is-empty .date-placeholder{
+  opacity:1;
 }
 
 .input,.select,.textarea{
@@ -532,6 +553,9 @@ textarea{
 
 @supports (-webkit-touch-callout: none){
   .input,.select,.textarea{
+    font-size:16px;
+  }
+  .date-placeholder{
     font-size:16px;
   }
   .new-form .select{
@@ -621,6 +645,11 @@ textarea{
   align-items:stretch;
   margin-top:6px;
 }
+.submit-actions{
+  display:flex;
+  gap:8px;
+  width:100%;
+}
 
 .btn-primary{
   background:#111;
@@ -646,6 +675,29 @@ textarea{
   cursor:pointer;
   border-radius:5px;
 }
+.btn.floating-undo{
+  position:fixed;
+  right:16px;
+  bottom:var(--floating-undo-bottom, 16px);
+  width:48px;
+  height:48px;
+  padding:0;
+  border-radius:999px;
+  background:#111;
+  color:#fff;
+  border:none;
+  font-size:20px;
+  box-shadow:0 8px 20px rgba(0,0,0,0.2);
+  z-index:1000;
+}
+.btn-clear{
+  background:#9aa0a6;
+  color:#fff;
+  border-color:#9aa0a6;
+}
+.new-form .btn-clear{
+  height:calc(var(--field-h) + var(--or-h) + var(--stack-gap) * 2 - 12px);
+}
 .btn.dark{
   background:#222;
   color:#fff;
@@ -662,6 +714,26 @@ textarea{
 }
 @media (max-width: 900px){
   .accordion-grid{grid-template-columns:1fr;}
+}
+@media (min-width: 800px){
+  .field.submit .submit-actions{
+    flex-direction:column;
+  }
+}
+@media (max-width: 800px){
+  .field.submit .submit-actions{
+    flex-direction:row;
+  }
+  .field.submit .submit-actions .btn-clear{
+    flex:1;
+  }
+  .field.submit .submit-actions .btn-primary{
+    flex:3;
+  }
+  .field.submit .submit-actions .btn-clear,
+  .field.submit .submit-actions .btn-primary{
+    font-size:1.5em;
+  }
 }
 
 .accordion summary,
