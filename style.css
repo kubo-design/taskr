@@ -746,6 +746,7 @@ textarea{
   .date-row{
     gap:6px;
     flex-wrap:wrap;
+    align-items:stretch;
   }
   .date-input-wrap{
     max-width:100%;
@@ -754,6 +755,18 @@ textarea{
   }
   .date-row .time-toggle{
     width:100%;
+  }
+  .date-input-wrap .input{
+    box-sizing:border-box;
+    width:100%;
+    min-width:0;
+    max-width:100%;
+    display:block;
+    appearance:none;
+    -webkit-appearance:none;
+  }
+  .date-row .time-toggle{
+    box-sizing:border-box;
   }
 }
 
