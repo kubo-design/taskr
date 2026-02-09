@@ -1141,6 +1141,7 @@ function linkifyText(value) {
   let result = "";
   let lastIndex = 0;
   let match = null;
+  const maxUrlLength = 20;
 
   while ((match = urlRegex.exec(text)) !== null) {
     const rawUrl = match[0];
@@ -1158,7 +1159,8 @@ function linkifyText(value) {
       result += escapeHtml(rawUrl);
     } else {
       const safeHref = encodeURI(url).replace(/"/g, "%22");
-      result += `<a class="note-link" href="${safeHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>${escapeHtml(suffix)}`;
+      const displayUrl = url.length > maxUrlLength ? `${url.slice(0, maxUrlLength)}…` : url;
+      result += `<a class="note-link" href="${safeHref}" target="_blank" rel="noopener noreferrer">${escapeHtml(displayUrl)}</a>${escapeHtml(suffix)}`;
     }
     lastIndex = offset + rawUrl.length;
   }
@@ -2020,7 +2022,11 @@ function openPreviewDialog(task) {
   els.previewType.textContent = typeLabel;
   els.previewProject.textContent = task.project || "";
   els.previewTodo.textContent = task.todo || "";
-  els.previewNote.textContent = task.note || "内 / 備 / 注なし";
+  if (task.note && task.note.trim()) {
+    els.previewNote.innerHTML = linkifyText(task.note);
+  } else {
+    els.previewNote.textContent = "内 / 備 / 注なし";
+  }
   els.previewDue.textContent = task.dueDate ? formatDate(task.dueDate, task.dueTime) : "未定";
   if (task.attachments && task.attachments.length) {
     els.previewAttachments.innerHTML = renderAttachmentList(task.attachments);
