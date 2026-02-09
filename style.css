@@ -750,6 +750,7 @@ textarea{
   .date-input-wrap{
     max-width:100%;
     flex:1 1 100%;
+    width:100%;
   }
   .date-row .time-toggle{
     width:100%;
