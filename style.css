@@ -567,9 +567,15 @@ textarea{
 .file-input{
   padding:6px 8px;
   border:0;
+  font-size:0;
 }
 .file-input::file-selector-button{
   border:1px solid var(--line);
+  font-size:0.875rem;
+}
+.file-input::-webkit-file-upload-button{
+  border:1px solid var(--line);
+  font-size:0.875rem;
 }
 .attachment-chip-list{
   display:flex;
@@ -605,6 +611,22 @@ textarea{
   color:var(--muted);
   margin-top:4px;
   line-height:1.6;
+}
+.file-row{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:nowrap;
+}
+.file-row .file-input{
+  flex:0 0 auto;
+  width:auto;
+}
+.file-row .file-help{
+  margin-top:0;
+  white-space:nowrap;
+  font-size:0.625rem;
+  letter-spacing:-0.01em;
 }
 .textarea{resize:vertical;}
 

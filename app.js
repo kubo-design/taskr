@@ -144,7 +144,8 @@ let attachmentDbPromise = null;
 let attachmentUrlCache = new Map();
 const editAttachmentState = {
   list: [],
-  removed: new Set()
+  removed: new Set(),
+  pendingFiles: []
 };
 
 function openAttachmentDb() {
@@ -1340,14 +1341,15 @@ function updateFilterButtons() {
   });
 }
 
+let newAttachmentFiles = [];
+
 function renderNewAttachmentList() {
   if (!els.noteAttachmentsList || !els.noteAttachments) return;
-  const files = Array.from(els.noteAttachments.files || []);
-  if (!files.length) {
+  if (!newAttachmentFiles.length) {
     els.noteAttachmentsList.innerHTML = "";
     return;
   }
-  els.noteAttachmentsList.innerHTML = files.map((file, idx) => {
+  els.noteAttachmentsList.innerHTML = newAttachmentFiles.map((file, idx) => {
     return `<span class="attachment-chip">
       ${escapeHtml(file.name)}
       <button class="chip-remove" type="button" data-index="${idx}" aria-label="選択解除">×</button>
@@ -1356,7 +1358,22 @@ function renderNewAttachmentList() {
 }
 
 if (els.noteAttachments) {
-  els.noteAttachments.addEventListener("change", renderNewAttachmentList);
+  els.noteAttachments.addEventListener("change", () => {
+    const incoming = Array.from(els.noteAttachments.files || []);
+    if (!incoming.length) return;
+    const available = MAX_ATTACHMENTS_PER_TASK - newAttachmentFiles.length;
+    if (available <= 0) {
+      alert(`添付は最大${MAX_ATTACHMENTS_PER_TASK}件までです。`);
+    } else {
+      const toAdd = incoming.slice(0, available);
+      if (incoming.length > available) {
+        alert(`添付は最大${MAX_ATTACHMENTS_PER_TASK}件までです。`);
+      }
+      newAttachmentFiles = newAttachmentFiles.concat(toAdd);
+      renderNewAttachmentList();
+    }
+    els.noteAttachments.value = "";
+  });
 }
 if (els.noteAttachmentsList) {
   els.noteAttachmentsList.addEventListener("click", (e) => {
@@ -1364,13 +1381,7 @@ if (els.noteAttachmentsList) {
     if (!btn) return;
     const index = Number(btn.dataset.index);
     if (!Number.isFinite(index)) return;
-    const input = els.noteAttachments;
-    if (!input) return;
-    const files = Array.from(input.files || []);
-    files.splice(index, 1);
-    const dt = new DataTransfer();
-    files.forEach((file) => dt.items.add(file));
-    input.files = dt.files;
+    newAttachmentFiles.splice(index, 1);
     renderNewAttachmentList();
   });
 }
@@ -1669,6 +1680,7 @@ els.editNoteAddCheckbox?.addEventListener("click", () => {
 const resetNewFormInputs = () => {
   if (els.form) els.form.reset();
   if (els.noteAttachments) els.noteAttachments.value = "";
+  newAttachmentFiles = [];
   renderNewAttachmentList();
   if (els.dueTimeInput) els.dueTimeInput.value = "";
   if (els.dueTimeRow) els.dueTimeRow.classList.add("is-hidden");
@@ -1693,7 +1705,7 @@ els.form.addEventListener("submit", async (e) => {
   const projects = loadHistory(STORAGE.projects);
   const todos = loadHistory(STORAGE.todos);
 
-  const files = Array.from(els.noteAttachments?.files || []);
+  const files = newAttachmentFiles.slice();
   const validation = validateAttachments(files, 0);
   if (!validation.ok) {
     alert(validation.message);
@@ -2235,6 +2247,7 @@ function openEditDialog(task) {
   els.editForm.editType.value = task.type;
   editAttachmentState.list = (task.attachments || []).map((item) => ({ ...item }));
   editAttachmentState.removed = new Set();
+  editAttachmentState.pendingFiles = [];
   renderEditAttachments();
   if (els.editAttachments) els.editAttachments.value = "";
   moveGlobalUndo(els.editDialog);
@@ -2252,32 +2265,67 @@ function openEditDialog(task) {
 
 function renderEditAttachments() {
   if (!els.editAttachmentsList) return;
-  if (!editAttachmentState.list.length) {
+  if (!editAttachmentState.list.length && !editAttachmentState.pendingFiles.length) {
     els.editAttachmentsList.innerHTML = "";
     return;
   }
-  els.editAttachmentsList.innerHTML = editAttachmentState.list.map((item) => {
+  const saved = editAttachmentState.list.map((item) => {
     return `<li>
       <a class="attachment-link" data-attachment-id="${item.id}" data-attachment-name="${escapeHtml(item.name)}">${escapeHtml(item.name)}</a>
-      <button class="btn" type="button" data-action="remove-attachment" data-id="${item.id}">削除</button>
+      <button class="btn" type="button" data-action="remove-attachment" data-id="${item.id}">×</button>
     </li>`;
-  }).join("");
+  });
+  const pending = editAttachmentState.pendingFiles.map((file, idx) => {
+    return `<li>
+      <span class="attachment-name">${escapeHtml(file.name)}</span>
+      <button class="btn" type="button" data-action="remove-pending" data-index="${idx}">×</button>
+    </li>`;
+  });
+  els.editAttachmentsList.innerHTML = saved.concat(pending).join("");
 }
 
 if (els.editAttachmentsList) {
   els.editAttachmentsList.addEventListener("click", (e) => {
     const btn = e.target.closest("button");
     if (!btn) return;
-    if (btn.dataset.action !== "remove-attachment") return;
-    const id = btn.dataset.id;
-    if (!id) return;
-    editAttachmentState.list = editAttachmentState.list.filter((item) => item.id !== id);
-    editAttachmentState.removed.add(id);
-    if (attachmentUrlCache.has(id)) {
-      URL.revokeObjectURL(attachmentUrlCache.get(id));
-      attachmentUrlCache.delete(id);
+    const action = btn.dataset.action;
+    if (action === "remove-attachment") {
+      const id = btn.dataset.id;
+      if (!id) return;
+      editAttachmentState.list = editAttachmentState.list.filter((item) => item.id !== id);
+      editAttachmentState.removed.add(id);
+      if (attachmentUrlCache.has(id)) {
+        URL.revokeObjectURL(attachmentUrlCache.get(id));
+        attachmentUrlCache.delete(id);
+      }
+      renderEditAttachments();
     }
-    renderEditAttachments();
+    if (action === "remove-pending") {
+      const index = Number(btn.dataset.index);
+      if (!Number.isFinite(index)) return;
+      editAttachmentState.pendingFiles.splice(index, 1);
+      renderEditAttachments();
+    }
+  });
+}
+
+if (els.editAttachments) {
+  els.editAttachments.addEventListener("change", () => {
+    const incoming = Array.from(els.editAttachments.files || []);
+    if (!incoming.length) return;
+    const used = editAttachmentState.list.length + editAttachmentState.pendingFiles.length;
+    const available = MAX_ATTACHMENTS_PER_TASK - used;
+    if (available <= 0) {
+      alert(`添付は最大${MAX_ATTACHMENTS_PER_TASK}件までです。`);
+    } else {
+      const toAdd = incoming.slice(0, available);
+      if (incoming.length > available) {
+        alert(`添付は最大${MAX_ATTACHMENTS_PER_TASK}件までです。`);
+      }
+      editAttachmentState.pendingFiles = editAttachmentState.pendingFiles.concat(toAdd);
+      renderEditAttachments();
+    }
+    els.editAttachments.value = "";
   });
 }
 
@@ -2311,7 +2359,7 @@ els.editForm.addEventListener("submit", async (e) => {
   const task = tasks.find((t) => t.id === els.editId.value);
   if (!task) return;
 
-  const newFiles = Array.from(els.editAttachments?.files || []);
+  const newFiles = editAttachmentState.pendingFiles.slice();
   const validation = validateAttachments(newFiles, editAttachmentState.list.length);
   if (!validation.ok) {
     alert(validation.message);
@@ -2354,6 +2402,7 @@ els.editForm.addEventListener("submit", async (e) => {
   }
   saveTasks(tasks);
   els.editDialog.close();
+  editAttachmentState.pendingFiles = [];
   render();
 });
 
