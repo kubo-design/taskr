@@ -1524,54 +1524,60 @@ els.activeProjectFilter?.addEventListener("change", (e) => {
   render();
 });
 
+let exportPayload = null;
+let exportFilename = "";
+let exportBlob = null;
+let exportFile = null;
+
+const setExportPayload = (payload, filename) => {
+  const created = createExportFile(payload, filename);
+  exportPayload = payload;
+  exportFilename = filename;
+  exportBlob = created.blob;
+  exportFile = created.file;
+};
+
+const openExportDialog = () => {
+  if (!els.exportDialog) return;
+  if (els.exportSupportNote) {
+    const note = window.isSecureContext
+      ? "共有・保存先選択・ダウンロードから選べます。"
+      : "file:// で開いている場合は保存先選択が使えないことがあります。";
+    els.exportSupportNote.textContent = note;
+  }
+  if (els.exportShareBtn) els.exportShareBtn.classList.toggle("is-hidden", !exportFile || !getExportCapabilities(exportFile).canShare);
+  if (els.exportSaveBtn) els.exportSaveBtn.classList.toggle("is-hidden", !exportFile || !getExportCapabilities(exportFile).canSave);
+  if (els.exportDownloadBtn) els.exportDownloadBtn.classList.remove("is-hidden");
+  els.exportDialog.showModal();
+};
+
 if (els.exportActiveJson) {
-  let exportPayload = null;
-  let exportFilename = "";
-  let exportBlob = null;
-  let exportFile = null;
-
-  const openExportDialog = () => {
-    if (!els.exportDialog) return;
-    if (els.exportSupportNote) {
-      const note = window.isSecureContext
-        ? "共有・保存先選択・ダウンロードから選べます。"
-        : "file:// で開いている場合は保存先選択が使えないことがあります。";
-      els.exportSupportNote.textContent = note;
-    }
-    if (els.exportShareBtn) els.exportShareBtn.classList.toggle("is-hidden", !exportFile || !getExportCapabilities(exportFile).canShare);
-    if (els.exportSaveBtn) els.exportSaveBtn.classList.toggle("is-hidden", !exportFile || !getExportCapabilities(exportFile).canSave);
-    if (els.exportDownloadBtn) els.exportDownloadBtn.classList.remove("is-hidden");
-    els.exportDialog.showModal();
-  };
-
   els.exportActiveJson.addEventListener("click", () => {
-    exportPayload = buildActiveExportPayload();
+    const payload = buildActiveExportPayload();
     const dateKey = new Date().toISOString().slice(0, 10);
-    exportFilename = `taskr-active-${dateKey}.json`;
-    const created = createExportFile(exportPayload, exportFilename);
-    exportBlob = created.blob;
-    exportFile = created.file;
+    const filename = `taskr-active-${dateKey}.json`;
+    setExportPayload(payload, filename);
     openExportDialog();
   });
+}
 
-  if (els.exportShareBtn) {
-    els.exportShareBtn.addEventListener("click", async () => {
-      if (!exportFile) return;
-      await shareJsonFile(exportFile);
-    });
-  }
-  if (els.exportSaveBtn) {
-    els.exportSaveBtn.addEventListener("click", async () => {
-      if (!exportBlob) return;
-      await saveJsonFile(exportBlob, exportFilename);
-    });
-  }
-  if (els.exportDownloadBtn) {
-    els.exportDownloadBtn.addEventListener("click", () => {
-      if (!exportBlob) return;
-      downloadJsonFile(exportBlob, exportFilename);
-    });
-  }
+if (els.exportShareBtn) {
+  els.exportShareBtn.addEventListener("click", async () => {
+    if (!exportFile) return;
+    await shareJsonFile(exportFile);
+  });
+}
+if (els.exportSaveBtn) {
+  els.exportSaveBtn.addEventListener("click", async () => {
+    if (!exportBlob) return;
+    await saveJsonFile(exportBlob, exportFilename);
+  });
+}
+if (els.exportDownloadBtn) {
+  els.exportDownloadBtn.addEventListener("click", () => {
+    if (!exportBlob) return;
+    downloadJsonFile(exportBlob, exportFilename);
+  });
 }
 
 if (els.importActiveJsonBtn && els.importActiveJson) {
@@ -1676,8 +1682,8 @@ els.activeList.addEventListener("click", async (e) => {
       const payload = buildSingleTaskPayload(task);
       const dateKey = new Date().toISOString().slice(0, 10);
       const filename = `taskr-task-${dateKey}.json`;
-      const { file } = createExportFile(payload, filename);
-      await shareJsonFile(file);
+      setExportPayload(payload, filename);
+      openExportDialog();
     }
     return;
   }
