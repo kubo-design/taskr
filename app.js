@@ -19,6 +19,7 @@ const els = {
   todoSelect: $("#todoSelect"),
   noteInput: $("#noteInput"),
   noteAttachments: $("#noteAttachments"),
+  noteAttachmentsList: $("#noteAttachmentsList"),
   noteAddCheckbox: $("#noteAddCheckbox"),
   globalUndo: $("#globalUndo"),
   dueRow: document.querySelector(".date-row"),
@@ -237,6 +238,10 @@ function isAllowedAttachment(file) {
   return Array.from(ALLOWED_ATTACHMENT_EXTS).some((ext) => name.endsWith(ext));
 }
 
+function isResizableImage(file) {
+  return file && (file.type === "image/jpeg" || file.type === "image/png");
+}
+
 function validateAttachments(files, existingCount) {
   if (existingCount + files.length > MAX_ATTACHMENTS_PER_TASK) {
     return { ok: false, message: `添付は最大${MAX_ATTACHMENTS_PER_TASK}件までです。` };
@@ -245,11 +250,100 @@ function validateAttachments(files, existingCount) {
     if (!isAllowedAttachment(file)) {
       return { ok: false, message: "添付できるのは jpeg/jpg, png, svg, pdf のみです。" };
     }
-    if (file.size > MAX_ATTACHMENT_SIZE) {
+    if (file.size > MAX_ATTACHMENT_SIZE && !isResizableImage(file)) {
       return { ok: false, message: "1ファイルの上限は1MBです。" };
     }
   }
   return { ok: true };
+}
+
+function replaceFileExtension(name, nextExt) {
+  const base = name && name.includes(".") ? name.replace(/\.[^/.]+$/, "") : (name || "image");
+  return `${base}${nextExt}`;
+}
+
+async function loadImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = (err) => {
+      URL.revokeObjectURL(url);
+      reject(err);
+    };
+    img.src = url;
+  });
+}
+
+async function canvasToBlob(canvas, type, quality) {
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), type, quality);
+  });
+}
+
+async function resizeImageFile(file, maxBytes) {
+  const img = await loadImageFromFile(file);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  let scale = 1;
+  let quality = 0.92;
+  let blob = null;
+  let attempts = 0;
+
+  while (attempts < 12) {
+    const width = Math.max(1, Math.round(img.width * scale));
+    const height = Math.max(1, Math.round(img.height * scale));
+    canvas.width = width;
+    canvas.height = height;
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+    blob = await canvasToBlob(canvas, "image/jpeg", quality);
+    if (blob && blob.size <= maxBytes) break;
+    if (quality > 0.7) {
+      quality -= 0.1;
+    } else {
+      scale *= 0.85;
+    }
+    attempts += 1;
+  }
+
+  if (!blob || blob.size > maxBytes) return null;
+  return blob;
+}
+
+async function prepareAttachments(files) {
+  const next = [];
+  for (const file of files) {
+    if (!isAllowedAttachment(file)) {
+      throw new Error("添付できるのは jpeg/jpg, png, svg, pdf のみです。");
+    }
+    if (file.size <= MAX_ATTACHMENT_SIZE || !isResizableImage(file)) {
+      if (file.size > MAX_ATTACHMENT_SIZE) {
+        throw new Error("1ファイルの上限は1MBです。");
+      }
+      next.push(file);
+      continue;
+    }
+    const resized = await resizeImageFile(file, MAX_ATTACHMENT_SIZE);
+    if (!resized) {
+      throw new Error("画像の圧縮に失敗しました。");
+    }
+    const nextName = replaceFileExtension(file.name, ".jpg");
+    let nextFile = null;
+    try {
+      nextFile = new File([resized], nextName, { type: resized.type, lastModified: Date.now() });
+    } catch {
+      resized.name = nextName;
+      nextFile = resized;
+    }
+    next.push(nextFile);
+  }
+  return next;
 }
 
 async function saveAttachments(taskId, files) {
@@ -1246,6 +1340,41 @@ function updateFilterButtons() {
   });
 }
 
+function renderNewAttachmentList() {
+  if (!els.noteAttachmentsList || !els.noteAttachments) return;
+  const files = Array.from(els.noteAttachments.files || []);
+  if (!files.length) {
+    els.noteAttachmentsList.innerHTML = "";
+    return;
+  }
+  els.noteAttachmentsList.innerHTML = files.map((file, idx) => {
+    return `<span class="attachment-chip">
+      ${escapeHtml(file.name)}
+      <button class="chip-remove" type="button" data-index="${idx}" aria-label="選択解除">×</button>
+    </span>`;
+  }).join("");
+}
+
+if (els.noteAttachments) {
+  els.noteAttachments.addEventListener("change", renderNewAttachmentList);
+}
+if (els.noteAttachmentsList) {
+  els.noteAttachmentsList.addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    const index = Number(btn.dataset.index);
+    if (!Number.isFinite(index)) return;
+    const input = els.noteAttachments;
+    if (!input) return;
+    const files = Array.from(input.files || []);
+    files.splice(index, 1);
+    const dt = new DataTransfer();
+    files.forEach((file) => dt.items.add(file));
+    input.files = dt.files;
+    renderNewAttachmentList();
+  });
+}
+
 function rescheduleTask(tasks, id, days) {
   const task = tasks.find((t) => t.id === id);
   if (!task) return tasks;
@@ -1540,6 +1669,7 @@ els.editNoteAddCheckbox?.addEventListener("click", () => {
 const resetNewFormInputs = () => {
   if (els.form) els.form.reset();
   if (els.noteAttachments) els.noteAttachments.value = "";
+  renderNewAttachmentList();
   if (els.dueTimeInput) els.dueTimeInput.value = "";
   if (els.dueTimeRow) els.dueTimeRow.classList.add("is-hidden");
   if (els.dueTimeToggle) els.dueTimeToggle.textContent = "時間を指定";
@@ -1569,6 +1699,13 @@ els.form.addEventListener("submit", async (e) => {
     alert(validation.message);
     return;
   }
+  let preparedFiles = [];
+  try {
+    preparedFiles = await prepareAttachments(files);
+  } catch (err) {
+    alert(err?.message || "添付の変換に失敗しました。");
+    return;
+  }
 
   const task = {
     id: uid(),
@@ -1585,9 +1722,9 @@ els.form.addEventListener("submit", async (e) => {
     attachments: []
   };
 
-  if (files.length) {
+  if (preparedFiles.length) {
     try {
-      task.attachments = await saveAttachments(task.id, files);
+      task.attachments = await saveAttachments(task.id, preparedFiles);
     } catch {
       alert("添付の保存に失敗しました。");
       return;
@@ -2180,6 +2317,13 @@ els.editForm.addEventListener("submit", async (e) => {
     alert(validation.message);
     return;
   }
+  let preparedFiles = [];
+  try {
+    preparedFiles = await prepareAttachments(newFiles);
+  } catch (err) {
+    alert(err?.message || "添付の変換に失敗しました。");
+    return;
+  }
 
   task.type = els.editForm.editType.value;
   task.project = els.editProject.value.trim();
@@ -2189,9 +2333,9 @@ els.editForm.addEventListener("submit", async (e) => {
   task.dueTime = task.dueDate ? (els.editDueTime.value || "") : "";
   task.updatedAt = Date.now();
   task.attachments = editAttachmentState.list.slice();
-  if (newFiles.length) {
+  if (preparedFiles.length) {
     try {
-      const added = await saveAttachments(task.id, newFiles);
+      const added = await saveAttachments(task.id, preparedFiles);
       task.attachments = task.attachments.concat(added);
     } catch {
       alert("添付の保存に失敗しました。");
