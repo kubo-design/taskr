@@ -620,7 +620,7 @@ textarea{
 }
 .file-row .file-input{
   flex:0 0 auto;
-  width:auto;
+  width:100%;
 }
 .file-row .file-help{
   margin-top:0;
