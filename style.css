@@ -674,6 +674,7 @@ textarea{
   padding:6px 10px;
   cursor:pointer;
   border-radius:5px;
+  touch-action:manipulation;
 }
 .btn.floating-undo{
   position:fixed;
@@ -685,7 +686,7 @@ textarea{
   border-radius:999px;
   background:#111;
   color:#fff;
-  border:none;
+  border:3px solid #2f6bff;
   font-size:20px;
   box-shadow:0 8px 20px rgba(0,0,0,0.2);
   z-index:1000;
@@ -733,6 +734,12 @@ textarea{
   .field.submit .submit-actions .btn-clear,
   .field.submit .submit-actions .btn-primary{
     font-size:1.5em;
+  }
+  .date-row{
+    gap:6px;
+  }
+  .date-input-wrap{
+    max-width:calc(100% - 110px);
   }
 }
 
