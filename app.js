@@ -21,6 +21,7 @@ const els = {
   noteAttachments: $("#noteAttachments"),
   noteAttachmentsList: $("#noteAttachmentsList"),
   noteAddCheckbox: $("#noteAddCheckbox"),
+  noteListify: $("#noteListify"),
   globalUndo: $("#globalUndo"),
   dueRow: document.querySelector(".date-row"),
   dueInput: $("#dueInput"),
@@ -58,6 +59,7 @@ const els = {
   editTodo: $("#editTodo"),
   editNote: $("#editNote"),
   editNoteAddCheckbox: $("#editNoteAddCheckbox"),
+  editNoteListify: $("#editNoteListify"),
   editAttachments: $("#editAttachments"),
   editAttachmentsList: $("#editAttachmentsList"),
   editDue: $("#editDue"),
@@ -1657,11 +1659,58 @@ function applyNoteCheckboxes(text, start, end) {
   return { text: nextText, start: nextStart, end: nextEnd };
 }
 
+function applyNoteListify(text, start, end) {
+  const lines = text.split(/\r?\n/);
+  const lineStarts = [];
+  let pos = 0;
+  lines.forEach((line, idx) => {
+    lineStarts[idx] = pos;
+    pos += line.length + 1;
+  });
+
+  const findLineIndex = (offset) => {
+    for (let i = 0; i < lineStarts.length; i += 1) {
+      const nextStart = i + 1 < lineStarts.length ? lineStarts[i + 1] : text.length + 1;
+      if (offset >= lineStarts[i] && offset < nextStart) return i;
+    }
+    return lineStarts.length - 1;
+  };
+
+  const startLine = findLineIndex(start);
+  const endLine = start === end ? startLine : findLineIndex(end);
+  let addedBeforeStart = 0;
+  let addedBeforeEnd = 0;
+
+  for (let i = startLine; i <= endLine; i += 1) {
+    const line = lines[i];
+    if (line.startsWith("・")) continue;
+    lines[i] = `・${line}`;
+    if (i === startLine) addedBeforeStart += 1;
+    addedBeforeEnd += 1;
+  }
+
+  const nextText = lines.join("\n");
+  const nextStart = start + (start === end ? addedBeforeStart : 0);
+  const nextEnd = end + addedBeforeEnd;
+  return { text: nextText, start: nextStart, end: nextEnd };
+}
+
 const handleNoteAddCheckbox = (textarea) => {
   if (!textarea) return;
   const start = textarea.selectionStart ?? 0;
   const end = textarea.selectionEnd ?? start;
   const { text, start: nextStart, end: nextEnd } = applyNoteCheckboxes(textarea.value, start, end);
+  textarea.value = text;
+  textarea.focus();
+  textarea.setSelectionRange(nextStart, nextEnd);
+  autoGrowTextArea(textarea);
+};
+
+const handleNoteListify = (textarea) => {
+  if (!textarea) return;
+  const start = textarea.selectionStart ?? 0;
+  const end = textarea.selectionEnd ?? start;
+  const { text, start: nextStart, end: nextEnd } = applyNoteListify(textarea.value, start, end);
   textarea.value = text;
   textarea.focus();
   textarea.setSelectionRange(nextStart, nextEnd);
@@ -1674,6 +1723,14 @@ els.noteAddCheckbox?.addEventListener("click", () => {
 });
 els.editNoteAddCheckbox?.addEventListener("click", () => {
   handleNoteAddCheckbox(els.editNote);
+  pushUndoState(els.editNote);
+});
+els.noteListify?.addEventListener("click", () => {
+  handleNoteListify(els.noteInput);
+  pushUndoState(els.noteInput);
+});
+els.editNoteListify?.addEventListener("click", () => {
+  handleNoteListify(els.editNote);
   pushUndoState(els.editNote);
 });
 
